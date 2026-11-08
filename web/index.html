@@ -519,6 +519,10 @@ svg text { font-family: var(--body); }
 .bubble th, .bubble td { border: 1px solid var(--line); padding: 5px 8px; text-align: left; vertical-align: top; }
 .bubble th { background: var(--surface); }
 .bubble code { background: var(--surface); padding: 1px 5px; border-radius: 4px; }
+.bubble pre { max-width: 100%; overflow-x: auto; }
+.bubble pre code { padding: 0; background: none; }
+.bubble { min-width: 0; overflow-wrap: anywhere; }
+.msg .col { min-width: 0; }
 .meta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: .8rem; color: var(--muted); }
 .meta a { color: var(--accent); }
 .meta button { background: none; border: 0; color: var(--accent); padding: 0; font-size: .8rem; text-decoration: underline; }
@@ -2653,9 +2657,12 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
     while ((m = VIZ_RE.exec(text)) && tags.length < 4) tags.push({ kind: m[1].toLowerCase(), arg: m[2].trim() });
     let clean = text.replace(VIZ_RE, "");
     // drop any picture drawn out of text characters (fenced blocks that are mostly symbols)
-    clean = clean.replace(/```[a-z]*\n([\s\S]*?)```/gi, (all, body) => {
+    clean = clean.replace(/```([a-z]*)[^\n]*\n([\s\S]*?)```/gi, (all, lang, body) => {
+      if (lang && !/^(text|txt|ascii|plain|plaintext|art|diagram)$/i.test(lang)) return all;
+      const lines = body.split("\n");
+      const symbolLines = lines.filter(l => (l.match(/[A-Za-z0-9]/g) || []).length < 3 && (l.match(/[\/\\|_()\-<>`'.*~^=+●○]/g) || []).length >= 2).length;
       const letters = (body.match(/[A-Za-z0-9]/g) || []).length, marks = (body.match(/[\/\\|_()\-<>`'.*~^=+]/g) || []).length;
-      return marks > letters * 0.35 ? "" : all;
+      return symbolLines >= 2 || /<--|-->|<==|==>/.test(body) || marks > letters * 0.35 ? "" : all;
     });
     // turn LaTeX-style formulas ($\text{C}_{17}\text{H}_{19}$) into plain text with subscripts
     const SUB = "₀₁₂₃₄₅₆₇₈₉", SUP = "⁰¹²³⁴⁵⁶⁷⁸⁹";
@@ -2809,6 +2816,7 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
   renderList(); renderSheet(); renderBooks(); renderNet();
   if (hist.length) {
     restoring = true;
+    hist = hist.map(([r, t]) => [r, r === "u" ? t : (takeVisuals(String(t)).clean || t)]); store.set(HIST_KEY, hist);
     hist.forEach(([r, t]) => { if (r === "u") userSay(t); else botSay(t); });
     restoring = false;
   } else welcome();
