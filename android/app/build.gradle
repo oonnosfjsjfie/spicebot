@@ -1,0 +1,44 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.spicebot.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.spicebot.app"
+        minSdk 24
+        targetSdk 34
+        versionCode((project.findProperty("versionCode") ?: "2") as Integer)
+        versionName "2.0"
+    }
+
+    signingConfigs {
+        release {
+            // The signing key is kept private, not in this repository. Put spicebot.jks here to build.
+            storeFile file('spicebot.jks')
+            storePassword 'spicebot123'
+            keyAlias 'spicebot'
+            keyPassword 'spicebot123'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+}
+
