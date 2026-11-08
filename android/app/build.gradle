@@ -10,8 +10,8 @@ android {
         applicationId "com.spicebot.app"
         minSdk 24
         targetSdk 34
-        versionCode((project.findProperty("versionCode") ?: "3") as Integer)
-        versionName "3.0"
+        versionCode((project.findProperty("versionCode") ?: "4") as Integer)
+        versionName "4.0"
     }
 
     signingConfigs {

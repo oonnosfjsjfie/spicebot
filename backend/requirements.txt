@@ -1,0 +1,1 @@
+# SpiceBot needs no extra Python packages: the server uses only Python's standard library.

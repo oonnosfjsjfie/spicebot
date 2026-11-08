@@ -1,32 +1,39 @@
 # SpiceBot
 
-A friendly spice and herb guide: 126 spices and herbs, their chemistry (structures, formulas, molar masses),
-flavour charts, PDF books with page citations, and a chatbot that works offline. With internet it also adds
-details from Wikipedia and PubChem and saves them for later.
+A spice and herb guide with a chat assistant. Online, questions go to Google's Gemini AI through a small server, along with the matching library notes and book passages. Offline, or if the AI is unavailable, the built-in brain answers from the same library.
 
-- **Website:** https://oonnosfjsjfie.github.io/spicebot/
-- **Android app:** https://oonnosfjsjfie.github.io/spicebot/SpiceBot.apk (also the "Get the Android app" button on the website)
+## Live server (Render)
+
+The repo deploys to Render as one web service using `render.yaml`:
+
+1. On Render, choose **New → Blueprint** and pick this repo (or **New → Web Service** with start command `python backend/server.py`).
+2. In the service's **Environment**, add `GEMINI_API_KEY` with your key from Google AI Studio. Never put the key in code or commit it.
+3. Deploy. The site is served at `https://spicebot.onrender.com/`, and `/api/health` reports whether the AI is ready.
+
+On the free plan the server sleeps after a period without visits, so the first question after a break can take up to a minute while it wakes; the page shows "Waking up SpiceBot's AI…" meanwhile.
+
+If Render gives the service a different address, update `API_BASE` in the web page and `SITE_HOST` in `MainActivity.java`, then rebuild.
+
+## Running locally
+
+```
+cp backend/.env.example backend/.env   # then paste your key into backend/.env
+python backend/server.py               # http://127.0.0.1:8000
+```
+
+The server needs only Python's standard library.
 
 ## How the app works
 
-Like the Neutrix app, the Android app opens the live website, so **every change to the website reaches the app
-straight away**, with no new install. The website saves a copy of itself on the phone (`sw.js`), so the app also
-works offline. If the phone is offline on the very first launch, the app opens the copy built into it instead.
-
-A new APK is only needed if the app itself changes (its name, icon or Android code).
+The Android app (`web/SpiceBot.apk`, version 4) opens the live site, so changes to the website reach the app without a reinstall. If the site can't be reached within 12 seconds, or there's no internet, it opens the copy built into the app, where the built-in brain answers.
 
 ## Files
 
-| File | What it is |
-| --- | --- |
-| `index.html` | The whole SpiceBot website and chatbot, in one file |
-| `sw.js` | Keeps SpiceBot working offline; always fetches the newest version first |
-| `manifest.webmanifest`, `*.png` | App name and icons for "Add to Home screen" |
-| `SpiceBot.apk` | The Android app |
-| `android/` | The app's source code (Java WebView app, package `com.spicebot.app`) |
+- `web/`: the website (single page, service worker for offline use, icons, the APK)
+- `backend/server.py`: serves `web/` and the `/api/chat` endpoint that calls Gemini (model fallback, rate limit of 15 requests a minute per visitor)
+- `render.yaml`: Render blueprint
+- `android/`: the Android app source
 
 ## Updating
 
-- **Website and chatbot:** replace `index.html`. The website and the app both update by themselves.
-- **App:** rebuild `SpiceBot.apk` from `android/` and replace it. It must be signed with the same private key
-  (`spicebot.jks`, kept outside this repository) so it installs over the old version.
+Change the files in `web/`, commit and push; Render redeploys automatically and the app picks up the change on its next launch.

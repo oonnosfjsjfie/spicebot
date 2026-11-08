@@ -3,3 +3,6 @@
 build/
 .gradle/
 local.properties
+backend/.env
+__pycache__/
+*.pyc

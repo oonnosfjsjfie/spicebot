@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
@@ -17,22 +19,24 @@ import java.io.InputStream;
 import java.util.HashMap;
 
 /**
- * Like the Neutrix app, SpiceBot opens the live website, so every change to the website reaches the
- * app without a new install. The website keeps a copy of itself on the phone for offline use. If the
+ * Like the Neutrix app, SpiceBot opens the live website (on Render), so every change to the website
+ * reaches the app without a new install. The website keeps a copy of itself on the phone for offline use. If the
  * phone is offline and no copy is saved yet (the very first launch), the app opens the copy built into
  * it instead, served from https://appassets.androidplatform.net/assets/. Outside links open in the browser.
  */
 public class MainActivity extends Activity {
     static final String HOST = "appassets.androidplatform.net";
     static final String LOCAL = "https://" + HOST + "/assets/index.html";
-    static final String SITE_HOST = "oonnosfjsjfie.github.io";
-    static final String SITE_PATH = "/spicebot";
-    static final String LIVE = "https://" + SITE_HOST + SITE_PATH + "/";
+    static final String SITE_HOST = "spicebot.onrender.com";
+    static final String LIVE = "https://" + SITE_HOST + "/";
+    static final long SLOW_MS = 12000;
     static final int FILE_REQUEST = 42;
 
     WebView webView;
     ValueCallback<Uri[]> fileCallback;
     boolean usingLocal;
+    boolean liveLoaded;
+    final Handler handler = new Handler(Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +60,9 @@ public class MainActivity extends Activity {
             webView.restoreState(savedInstanceState);
         } else {
             webView.loadUrl(LIVE);
+            // The free server sleeps when nobody uses it. If it is slow to wake, show the built-in copy;
+            // its chat still reaches SpiceBot's AI once the server is awake.
+            handler.postDelayed(new SlowCheck(this), SLOW_MS);
         }
     }
 
@@ -94,7 +101,7 @@ public class MainActivity extends Activity {
         String host = url.getHost();
         if (HOST.equals(host)) return true;
         String path = url.getPath();
-        return SITE_HOST.equals(host) && path != null && path.startsWith(SITE_PATH) && !path.endsWith(".apk");
+        return SITE_HOST.equals(host) && (path == null || !path.endsWith(".apk"));
     }
 
     void useLocalCopy(WebView view) {
@@ -160,6 +167,11 @@ public class MainActivity extends Activity {
         }
 
         @Override
+        public void onPageFinished(WebView view, String url) {
+            if (url != null && url.contains(SITE_HOST)) a.liveLoaded = true;
+        }
+
+        @Override
         public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
             // Offline with nothing saved yet: open the copy built into the app.
             if (request.isForMainFrame() && SITE_HOST.equals(request.getUrl().getHost())) a.useLocalCopy(view);
@@ -168,6 +180,16 @@ public class MainActivity extends Activity {
         @Override
         public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse response) {
             if (request.isForMainFrame() && SITE_HOST.equals(request.getUrl().getHost()) && response.getStatusCode() >= 400) a.useLocalCopy(view);
+        }
+    }
+
+    static class SlowCheck implements Runnable {
+        final MainActivity a;
+        SlowCheck(MainActivity a) { this.a = a; }
+
+        @Override
+        public void run() {
+            if (!a.liveLoaded) a.useLocalCopy(a.webView);
         }
     }
 

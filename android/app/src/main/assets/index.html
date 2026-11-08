@@ -725,7 +725,7 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
       <div class="band-in">
         <span class="eyebrow">Spice &amp; herb guide · works offline</span>
         <h1>Every spice, explained.</h1>
-        <p class="lead">126 spices and herbs, from Kerala's pepper to Mexico's vanilla. See what they're made of, how they taste, how to cook and grow them, and chat with SpiceBot even without internet.</p>
+        <p class="lead">126 spices and herbs, from Kerala's pepper to Mexico's vanilla. See what they're made of, how they taste, how to cook and grow them, and ask SpiceBot's AI anything, with a built-in brain for when you're offline.</p>
         <div class="cta-row">
           <button type="button" class="btn-lg primary glow" id="heroAsk">💬 Ask SpiceBot</button>
           <button type="button" class="btn-lg" id="heroBrowse">Browse the spices</button>
@@ -742,7 +742,7 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
         <div class="tile-grid">
           <div class="tile reveal"><span class="ic" aria-hidden="true">📖</span><h3>Spice sheets</h3><p>Botany, origin, flavour and local names for 126 spices and herbs, with a flavour chart and a map of where each one comes from.</p><button type="button" data-go="sheet">Open the library</button></div>
           <div class="tile reveal"><span class="ic" aria-hidden="true">⚗️</span><h3>Real chemistry</h3><p>The molecules behind each flavour, properly drawn, with formulas, molar masses and what each one does in your food.</p><button type="button" data-go="explore">Explore the charts</button></div>
-          <div class="tile reveal"><span class="ic" aria-hidden="true">💬</span><h3>A chatbot that works offline</h3><p>Ask in your own words about cooking, health, growing, substitutes, blends, or take a quick quiz. Online, it adds Wikipedia details too.</p><button type="button" data-go="chat">Start a chat</button></div>
+          <div class="tile reveal"><span class="ic" aria-hidden="true">💬</span><h3>An AI chatbot that also works offline</h3><p>Online, SpiceBot's AI answers in your own words, using its checked spice library. Offline, its built-in brain takes over: cooking, health, growing, substitutes, blends and quizzes.</p><button type="button" data-go="chat">Start a chat</button></div>
         </div>
       </div>
     </section>
@@ -776,10 +776,10 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
         <span class="eyebrow">Trust &amp; safety</span>
         <h2>Built for trust and simplicity</h2>
         <div class="acc">
-          <details><summary>Where do SpiceBot's answers come from?</summary><p>From its own checked library of 126 spices and herbs and 79 compounds, from the PDF books you add, and, when you're online, from Wikipedia and PubChem. If it doesn't know something, it says so.</p></details>
+          <details><summary>Where do SpiceBot's answers come from?</summary><p>When you're online, SpiceBot's AI (Google Gemini) writes the answer, using SpiceBot's checked library of 126 spices and herbs and 79 compounds and the PDF books you add. Without internet, SpiceBot's built-in brain answers from the same library. Wikipedia and PubChem add extra details when you're online. If it doesn't know something, it says so.</p></details>
           <details><summary>Is it medical advice?</summary><p>No. SpiceBot shares general information and says how strong the evidence is for each health claim. Medicinal amounts, supplements and essential oils are different from cooking amounts, so talk to a doctor before using them.</p></details>
           <details><summary>Does it work without internet?</summary><p>Yes. The chatbot, the chemistry drawings and your books all work offline. With internet it adds Wikipedia and PubChem details and keeps them for next time.</p></details>
-          <details><summary>Where are my books and chats saved?</summary><p>Only on your own device. Nothing you type or upload is sent to a server.</p></details>
+          <details><summary>Where are my books and chats saved?</summary><p>Your chats and books are saved only on your own device. When you're online, each question, with the matching library notes and book passages, is sent to SpiceBot's server and Google's Gemini AI to write the answer. Without internet, nothing leaves your device.</p></details>
           <details><summary>How are the formulas checked?</summary><p>Every formula and molar mass is calculated from the molecule's structure and checked against its known formula.</p></details>
         </div>
       </div>
@@ -791,7 +791,7 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
         <h2>Simple parts, working together</h2>
         <div class="how-grid">
           <div class="how reveal"><small>Library</small><h3>126 entries</h3><p>Spices and herbs from seven world regions, with compounds, flavour scores and local names.</p></div>
-          <div class="how reveal"><small>Brain</small><h3>Built-in assistant</h3><p>Understands everyday questions, typos and follow-ups, and runs right inside the page.</p></div>
+          <div class="how reveal"><small>Brain</small><h3>AI + built-in brain</h3><p>Google Gemini answers online, grounded in the checked library. The built-in brain answers offline.</p></div>
           <div class="how reveal"><small>Online extras</small><h3>Wikipedia &amp; PubChem</h3><p>Adds summaries, photos and chemistry data when you're connected, then saves them.</p></div>
           <div class="how reveal"><small>Everywhere</small><h3>Website &amp; app</h3><p>The same SpiceBot on your laptop, your phone's browser and the Android app.</p></div>
         </div>
@@ -1749,11 +1749,27 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
   /* ---------- Online extras: Wikipedia + PubChem, saved for offline ---------- */
   const NET = { ok: false, checked: false };
   const WIKI = "https://en.wikipedia.org/api/rest_v1/page/summary/";
+  // SpiceBot's AI server (Gemini). On the Render site itself it is the same address; anywhere else
+  // (the Android app's built-in copy, a laptop file) it is the full Render address.
+  const API_BASE = (/\.onrender\.com$/.test(location.hostname) || /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) ? "" : "https://spicebot.onrender.com";
+  const AI = { state: "unknown", retryAt: 0 };
+  const aiUsable = () => navigator.onLine !== false && AI.state !== "nokey" && (AI.state !== "off" || Date.now() > AI.retryAt);
+  async function checkAI() {
+    if (navigator.onLine === false) { renderNet(); return; }
+    const j = await getJSON(API_BASE + "/api/health", 65000);
+    if (j && j.ok) AI.state = j.ai ? "on" : "nokey";
+    else if (AI.state !== "on") { AI.state = "off"; AI.retryAt = Date.now() + 60000; }
+    renderNet();
+  }
   function renderNet() {
     const n = $("netStatus");
     n.classList.toggle("on", NET.ok);
-    n.textContent = NET.ok ? "Online · adds Wikipedia details" : "Built-in knowledge · works offline";
-    n.title = NET.ok ? "SpiceBot answers from its own library and your books, and adds details from Wikipedia and PubChem. Details it looks up are saved for offline use." : "SpiceBot answers from its own library and your books. Connect to the internet to add Wikipedia and PubChem details.";
+    const online = navigator.onLine !== false;
+    const ai = online && typeof AI !== "undefined" && AI.state === "on";
+    if (!online) NET.ok = false;
+    n.classList.toggle("on", ai || NET.ok);
+    n.textContent = ai ? "AI online · Gemini" : NET.ok ? "Online · built-in brain" : "Offline · built-in brain";
+    n.title = ai ? "SpiceBot's AI (Google Gemini) answers your questions using its checked spice library and your books. Without internet, the built-in brain answers instead." : NET.ok ? "SpiceBot's AI isn't reachable right now, so the built-in brain is answering, with Wikipedia and PubChem details." : "No internet: SpiceBot's built-in brain answers from its own library and your books.";
   }
   async function getJSON(url, ms = 7000) {
     const c = new AbortController(); const t = setTimeout(() => c.abort(), ms);
@@ -2412,7 +2428,7 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
     const p = parse(text);
     p.t = slang(p.t);
     const talk = talkReply(p.t);
-    if (talk && talk.lang) return { text: talk.text, chips: [{ label: "Tell me about black pepper", q: "Tell me about black pepper" }] };
+    if (talk && talk.lang) return { local: true, text: talk.text, chips: [{ label: "Tell me about black pepper", q: "Tell me about black pepper" }] };
     let intent = intentOf(p.t);
     if (talk && !p.ents.length && !p.cmps.length && !p.blends.length && !(intent && !["greet", "thanks", "bye", "help"].includes(intent) && intent !== null && (p.flv.length || p.regions.length))) {
       return { text: talk.text, chips: talk.ask ? [] : [{ label: "Fun fact", q: "Tell me a fun fact" }, { label: "Tell me a joke", q: "Tell me a joke" }, { label: "What can you do?", q: "What can you do?" }] };
@@ -2531,45 +2547,124 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
     busy = true;
     const typing = el("div", "msg bot typing"); typing.append(el("div", "av"), el("div", "bubble", "SpiceBot is typing…")); msgs.append(typing); msgs.scrollTop = msgs.scrollHeight;
     setTimeout(async () => {
-      typing.remove();
       try {
         const r = respond(text);
-        if (r && r.quizStart) { botSay(r.text); quizAsk(); return; }
-        if (r) {
-          let body = r.text, hits = [];
-          if (r.book && books.length) { const bb = bookBits(r.book); body += bb.text; hits = bb.hits; }
-          const out = botSay(body, r.chips);
-          if (hits.length) { const meta = el("div", "meta"); hits.forEach(h => meta.append(el("span", "cite", `${h.title}, p. ${h.p}`))); out.col.insertBefore(meta, out.b.nextSibling); }
-          if (r.wiki) {
-            wikiFor("s:" + r.wiki.name, wikiTitle(r.wiki)).then(rec => { if (rec) { out.col.insertBefore(wikiBlock(rec), out.b.nextSibling); msgs.scrollTop = msgs.scrollHeight; } });
-          }
-          if (r.compound || r.compoundsOf) {
-            const keys = r.compound ? [r.compound] : r.compoundsOf.cmps.slice(0, 1);
-            keys.forEach(k => pubchemFor(k).then(pc => {
-              if (!pc) return;
-              const box = el("div", "wiki"); const tx = el("div", "wtx");
-              tx.append(el("span", "lbl", (pc.saved ? "From PubChem · saved for offline" : "From PubChem") + ` · ${CHEM.C[k].n}`));
-              if (pc.iupac) tx.append(el("p", null, "IUPAC name: " + pc.iupac));
-              if (pc.xlogp != null) tx.append(el("p", null, `XLogP ${pc.xlogp} (${pc.xlogp > 1 ? "prefers oil" : pc.xlogp < 0 ? "prefers water" : "mixes with both"})`));
-              if (pc.desc) tx.append(el("p", null, pc.desc));
-              const a = el("a", null, "Open in PubChem"); a.href = "https://pubchem.ncbi.nlm.nih.gov/compound/" + pc.cid; a.target = "_blank"; a.rel = "noopener"; tx.append(a);
-              box.append(tx); out.col.insertBefore(box, out.b.nextSibling); msgs.scrollTop = msgs.scrollHeight;
-            }));
-          }
+        if (r && r.quizStart) { typing.remove(); botSay(r.text); quizAsk(); return; }
+        if (r && r.local) { typing.remove(); renderLocal(r, text); return; }
+        if (aiUsable()) {
+          typing.querySelector(".bubble").textContent = "SpiceBot is thinking…";
+          const wake = setTimeout(() => { typing.querySelector(".bubble").textContent = "Waking up SpiceBot's AI. The first answer of the day can take up to a minute…"; }, 7000);
+          const ai = await askAI(text, r);
+          clearTimeout(wake);
+          typing.remove();
+          if (ai.answer) { renderAI(ai, r); return; }
+          renderLocal(r, text, ai.note);
           return;
         }
-        // nothing matched in the library
-        const bb = books.length ? bookBits(text, 3) : { text: "", hits: [] };
-        const qClean = N2(text).split(" ").filter(w => !STOPQ.has(w)).join(" ");
-        const out = botSay(bb.text ? `I don't have that in my spice library, but your books mention it:${bb.text}` : NET.ok ? "That's not in my spice library, so let me look it up…" : `Hmm, I don't know that one yet. I know 126 spices and herbs. Try asking about one of them, or tap a suggestion. ${NET.checked ? "When you're online, I can look up more on Wikipedia." : ""}`, bb.text || NET.ok ? [] : [{ label: "What can you do?", q: "What can you do?" }, { label: "Spices grown in Kerala", q: "Which spices are grown in Kerala?" }]);
-        if (!bb.text && qClean) wikiSearch(qClean).then(rec => {
-          if (rec) { md(out.b, `I don't have **${rec.title}** in my spice library, but here's what Wikipedia says:`); out.col.append(wikiBlock(rec)); }
-          else if (NET.ok) { md(out.b, "I couldn't find anything about that, even online. Try asking about a spice or herb by name."); renderChips(out.col, [{ label: "What can you do?", q: "What can you do?" }]); }
-          msgs.scrollTop = msgs.scrollHeight;
-        });
-      } finally { busy = false; }
-    }, 320 + Math.random() * 280);
+        typing.remove();
+        renderLocal(r, text, navigator.onLine === false ? "You're offline." : "");
+      } finally { busy = false; msgs.scrollTop = msgs.scrollHeight; }
+    }, 260 + Math.random() * 200);
   }
+
+  /* ---------- Asking SpiceBot's AI (Gemini, through SpiceBot's server) ---------- */
+  function spiceFacts(s) {
+    let o = `${s.name} (${s.latin}; family ${s.family}; ${s.type === "H" ? "herb" : "spice"}). Part used: ${s.part}. Native to: ${s.origin} (${REGIONS[s.region]}). Flavour: ${s.flavor}. Flavour scores 0-5: ${AXES.map((a, i) => a + " " + s.fl[i]).join(", ")}.`;
+    if (s.cmps.length) o += " Main compounds: " + s.cmps.map(k => { const c = CHEM.C[k]; return `${c.n} (${c.f}, ${c.mw.toFixed(2)} g/mol, ${c.c}, dissolves in ${c.sol.toLowerCase()}): ${c.r}`; }).join("; ") + ".";
+    else if (s.compounds !== "—") o += ` Key compounds: ${s.compounds}.`;
+    const names = [["Malayalam", s.ml, 0], ["Tamil", s.ta, 1], ["Hindi", s.hi, 2]].filter(([, v]) => v && v !== "—");
+    if (names.length) o += " Local names: " + names.map(([k, v, i]) => `${k} ${v}${ROMAN[s.name] && ROMAN[s.name][i] ? " (" + ROMAN[s.name][i] + ")" : ""}`).join(", ") + ".";
+    if (s.kerala) o += " Grown in Kerala.";
+    if (HISTORY[s.name]) o += " History: " + HISTORY[s.name];
+    if (HEALTH[s.name]) o += ` Health: ${HEALTH[s.name][0]} Evidence: ${HEALTH[s.name][1]}. Safety: ${HEALTH[s.name][2]}`;
+    if (GROW[s.name]) o += " Growing: " + GROW[s.name];
+    if (DISHES[s.name] && DISHES[s.name].length) o += " Dishes: " + DISHES[s.name].join(", ") + ".";
+    if (SUBS[s.name]) o += " Common substitutes: " + SUBS[s.name].join(", ") + ".";
+    if (QUALITY[s.name]) o += " Quality check: " + QUALITY[s.name];
+    return o;
+  }
+  let lastHits = [];
+  function aiContext(text, r) {
+    const p = parse(text);
+    let ents = p.ents.slice(0, 3);
+    if (!ents.length && lastEnt) ents = [lastEnt];
+    const lines = [];
+    ents.forEach(s => lines.push("LIBRARY: " + spiceFacts(s)));
+    p.cmps.slice(0, 2).forEach(k => lines.push("LIBRARY COMPOUND: " + aCompound(k).replace(/\*\*/g, "")));
+    p.blends.slice(0, 1).forEach(i => { const b = BLENDS[i]; lines.push(`LIBRARY BLEND: ${b.name}, from ${b.from}: ${b.has.join(", ")}${b.extra ? ", plus " + b.extra : ""}. Tip: ${b.tip}`); });
+    if (r && r.text && !ents.length && !p.cmps.length && !p.blends.length && (p.flv.length || p.regions.length)) lines.push("LIBRARY LIST: " + r.text.replace(/\*\*/g, "").slice(0, 1500));
+    lastHits = books.length ? search(text + " " + ents.map(s => s.name + " " + s.latin).join(" "), 3) : [];
+    lastHits.forEach(h => lines.push(`BOOK [${h.title}, p. ${h.p}]: ${h.text.slice(0, 800)}`));
+    return lines.join("\n").slice(0, 11000);
+  }
+  async function askAI(text, r) {
+    const history = hist.slice(0, -1).slice(-8).map(([role, t]) => ({ role: role === "u" ? "user" : "model", text: String(t).slice(0, 1200) }));
+    const body = { message: text.slice(0, 1500), history, context: aiContext(text, r), english_only: EN_ONLY };
+    const hits = lastHits;
+    const c = new AbortController(); const tm = setTimeout(() => c.abort(), 75000);
+    try {
+      const res = await fetch(API_BASE + "/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: c.signal });
+      let j = null; try { j = await res.json(); } catch {}
+      if (res.ok && j && j.answer) { AI.state = "on"; renderNet(); return { answer: j.answer, model: j.model, hits }; }
+      if (j && j.error === "no_key") { AI.state = "nokey"; renderNet(); }
+      return { note: (j && j.message) || "SpiceBot's AI didn't answer." };
+    } catch (e) {
+      AI.state = "off"; AI.retryAt = Date.now() + 60000; renderNet();
+      return { note: "I couldn't reach SpiceBot's AI." };
+    } finally { clearTimeout(tm); }
+  }
+  function sourceTag(out, label, hits) {
+    const meta = el("div", "meta");
+    meta.append(el("span", "aitag", label));
+    (hits || []).forEach(h => meta.append(el("span", "cite", `${h.title}, p. ${h.p}`)));
+    out.col.insertBefore(meta, out.b.nextSibling);
+  }
+  function renderExtras(out, r) {
+    if (!r) return;
+    if (r.wiki) {
+      wikiFor("s:" + r.wiki.name, wikiTitle(r.wiki)).then(rec => { if (rec) { out.col.insertBefore(wikiBlock(rec), out.b.nextSibling); msgs.scrollTop = msgs.scrollHeight; } });
+    }
+    if (r.compound || r.compoundsOf) {
+      const keys = r.compound ? [r.compound] : r.compoundsOf.cmps.slice(0, 1);
+      keys.forEach(k => pubchemFor(k).then(pc => {
+        if (!pc) return;
+        const box = el("div", "wiki"); const tx = el("div", "wtx");
+        tx.append(el("span", "lbl", (pc.saved ? "From PubChem · saved for offline" : "From PubChem") + ` · ${CHEM.C[k].n}`));
+        if (pc.iupac) tx.append(el("p", null, "IUPAC name: " + pc.iupac));
+        if (pc.xlogp != null) tx.append(el("p", null, `XLogP ${pc.xlogp} (${pc.xlogp > 1 ? "prefers oil" : pc.xlogp < 0 ? "prefers water" : "mixes with both"})`));
+        if (pc.desc) tx.append(el("p", null, pc.desc));
+        const a = el("a", null, "Open in PubChem"); a.href = "https://pubchem.ncbi.nlm.nih.gov/compound/" + pc.cid; a.target = "_blank"; a.rel = "noopener"; tx.append(a);
+        box.append(tx); out.col.insertBefore(box, out.b.nextSibling); msgs.scrollTop = msgs.scrollHeight;
+      }));
+    }
+  }
+  function renderAI(ai, r) {
+    const chips = r && r.chips && r.chips.length ? r.chips : [{ label: "Tell me about cardamom", q: "Tell me about cardamom" }, { label: "Quiz me", q: "Quiz me" }];
+    const out = botSay(ai.answer, chips);
+    sourceTag(out, "AI answer", ai.hits);
+    renderExtras(out, r);
+  }
+  function renderLocal(r, text, note) {
+    const pre = note ? `*${note} Here's my built-in answer.*\n\n` : "";
+    if (r) {
+      let body = r.text, hits = [];
+      if (r.book && books.length) { const bb = bookBits(r.book); body += bb.text; hits = bb.hits; }
+      const out = botSay(pre + body, r.chips);
+      if (!r.local) sourceTag(out, "Built-in brain", hits);
+      renderExtras(out, r);
+      return;
+    }
+    // nothing matched in the library
+    const bb = books.length ? bookBits(text, 3) : { text: "", hits: [] };
+    const qClean = N2(text).split(" ").filter(w => !STOPQ.has(w)).join(" ");
+    const out = botSay(pre + (bb.text ? `I don't have that in my spice library, but your books mention it:${bb.text}` : NET.ok ? "That's not in my spice library, so let me look it up…" : `Hmm, I don't know that one yet. I know 126 spices and herbs. Try asking about one of them, or tap a suggestion. ${NET.checked ? "When you're online, I can look up more on Wikipedia." : ""}`), bb.text || NET.ok ? [] : [{ label: "What can you do?", q: "What can you do?" }, { label: "Spices grown in Kerala", q: "Which spices are grown in Kerala?" }]);
+    if (!bb.text && qClean) wikiSearch(qClean).then(rec => {
+      if (rec) { md(out.b, pre + `I don't have **${rec.title}** in my spice library, but here's what Wikipedia says:`); out.col.append(wikiBlock(rec)); }
+      else if (NET.ok) { md(out.b, pre + "I couldn't find anything about that, even online. Try asking about a spice or herb by name."); renderChips(out.col, [{ label: "What can you do?", q: "What can you do?" }]); }
+      msgs.scrollTop = msgs.scrollHeight;
+    });
+  }
+
   function welcome() {
     msgs.textContent = ""; quiz = null; lastEnt = null; lastIntent = null; hist = []; store.set(HIST_KEY, hist);
     botSay(`Hi, I'm **SpiceBot**! Ask me anything about spices and herbs: what they are, how to cook with them, their chemistry, health effects, or how to grow them. I work offline too.`, [{ label: "Tell me about black pepper", q: "Tell me about black pepper" }, { label: "Substitute for cardamom", q: "Substitute for cardamom" }, { label: "What's in garam masala?", q: "What's in garam masala?" }, { label: "Quiz me", q: "Quiz me" }]);
@@ -2630,6 +2725,8 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
   if (startView === "chat" || (store.get("sb.chatOpen", false) && innerWidth > 600)) setChat(true);
   onScroll();
   checkNet().then(() => { if (window.SmilesDrawer) setTimeout(cacheAllStructures, 2500); });
+  checkAI();
+  addEventListener("online", checkAI);
 })();
 
 </script>
