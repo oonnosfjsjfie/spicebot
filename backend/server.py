@@ -193,8 +193,16 @@ def _weekly():
     url, week = markets.latest_weekly()
     pdf = markets.http_bytes(url, timeout=60)
     text, model = ask_gemini(None, None, payload=markets.weekly_payload(pdf, week))
-    j = markets.parse_json_block(text)
-    rows = markets.clean_rows(j.get("rows"), "₹/kg")
+    try:
+        j = markets.parse_json_block(text)
+    except Exception:
+        print("[weekly] reply was not JSON:", text[:400].replace("\n", " "), flush=True)
+        raise
+    if isinstance(j, list):
+        j = {"rows": j}
+    rows = markets.clean_rows(j.get("rows") or j.get("prices") or [], "₹/kg")
+    if not rows:
+        print("[weekly] no rows; reply starts:", text[:400].replace("\n", " "), flush=True)
     for r in rows:
         r.update({"source": "Spices Board weekly report", "url": url, "official": True, "ai": True})
         r["date"] = r["date"] or j.get("week") or week

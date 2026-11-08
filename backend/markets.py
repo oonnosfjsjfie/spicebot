@@ -183,12 +183,27 @@ Reply with ONLY this JSON, nothing else:
  "world":[{{"spice":"Black pepper","market":"Vietnam, FOB export","grade":"500 g/l","price":6.5,"min":6.4,"max":6.6,"unit":"US$/kg","date":"2026-11-05","source":"Nedspice","trend":"up"}}]}}"""
 
 
+def to_num(v):
+    """Numbers as printed in reports: 2,398.40 · Rs.2398 · 180-220 (midpoint) · '-'."""
+    if isinstance(v, (int, float)):
+        return float(v)
+    s = str(v or "").replace(",", "").replace("₹", "").replace("Rs.", "").replace("Rs", "").strip()
+    m = re.findall(r"\d+(?:\.\d+)?", s)
+    if not m:
+        return None
+    if len(m) >= 2 and re.search(r"\d\s*[-–to]+\s*\d", s):
+        return (float(m[0]) + float(m[1])) / 2
+    return float(m[0])
+
+
 def clean_rows(rows, unit):
     out = []
     for r in rows or []:
-        try:
-            p = float(r.get("price"))
-        except (TypeError, ValueError):
+        p = to_num(r.get("price"))
+        if p is None:
+            mn, mx = to_num(r.get("min")), to_num(r.get("max"))
+            p = (mn + mx) / 2 if mn and mx else (mx or mn)
+        if p is None:
             continue
         if p <= 0:
             continue
@@ -198,8 +213,7 @@ def clean_rows(rows, unit):
         out.append({
             "spice": str(r.get("spice", "")).strip()[:60], "market": str(r.get("market", "")).strip()[:80],
             "grade": str(r.get("grade", "") or "").strip()[:60], "price": round(p, 2),
-            "min": r.get("min") if isinstance(r.get("min"), (int, float)) else None,
-            "max": r.get("max") if isinstance(r.get("max"), (int, float)) else None,
+            "min": to_num(r.get("min")), "max": to_num(r.get("max")),
             "unit": unit, "date": d, "source": str(r.get("source", "")).strip()[:80],
             "trend": r.get("trend") if r.get("trend") in ("up", "down", "steady") else "", "official": False, "ai": True,
         })
