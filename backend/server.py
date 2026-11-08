@@ -191,7 +191,10 @@ def _weekly():
     if not API_KEY:
         raise RuntimeError("no GEMINI_API_KEY")
     url, week = markets.latest_weekly()
-    pdf = markets.http_bytes(url, timeout=60)
+    pdf = markets.http_bytes(url, timeout=60, referer=markets.WEEKLY_LIST)
+    print(f"[weekly] {url} -> {len(pdf)} bytes, starts {pdf[:8]!r}", flush=True)
+    if not pdf.startswith(b"%PDF"):
+        raise RuntimeError(f"the weekly report link did not return a PDF ({len(pdf)} bytes)")
     text, model = ask_gemini(None, None, payload=markets.weekly_payload(pdf, week))
     try:
         j = markets.parse_json_block(text)

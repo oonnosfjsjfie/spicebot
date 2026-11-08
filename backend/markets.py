@@ -29,8 +29,14 @@ def now_iso():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def http_bytes(url, timeout=40, limit=15_000_000):
-    req = urllib.request.Request(urllib.parse.quote(url, safe=":/?=&%#"), headers={"User-Agent": UA, "Accept": "*/*"})
+BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36"
+
+
+def http_bytes(url, timeout=40, limit=15_000_000, referer=None):
+    headers = {"User-Agent": BROWSER_UA if referer else UA, "Accept": "*/*"}
+    if referer:
+        headers["Referer"] = referer
+    req = urllib.request.Request(urllib.parse.quote(url, safe=":/?=&%#"), headers=headers)
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read(limit)
 
@@ -299,12 +305,19 @@ WEEKLY_LIST = "https://indianspices.com/magazines/english/sm-weekly.html"
 
 def latest_weekly():
     page = http_get(WEEKLY_LIST)
-    links = re.findall(r'href="([^"]+?\.pdf)"', page, flags=re.I)
+    links = [html.unescape(x) for x in re.findall(r'href=["\']([^"\']+?\.pdf)["\']', page, flags=re.I)]
+    dated = [x for x in links if re.search(r"\d{1,2}\.\d{1,2}\.\d{4}", urllib.parse.unquote(x))]
+
+    def when(x):
+        m = re.search(r"(\d{1,2})\.(\d{1,2})\.(\d{4})", urllib.parse.unquote(x))
+        return (int(m.group(3)), int(m.group(2)), int(m.group(1))) if m else (0, 0, 0)
+    if dated:
+        links = sorted(dated, key=when, reverse=True)
     if not links:
         raise RuntimeError("no weekly report link found")
-    url = urllib.parse.urljoin(WEEKLY_LIST, html.unescape(links[0]))
-    m = re.search(r"(\d{2})\.(\d{2})\.(\d{4})", urllib.parse.unquote(url))
-    week = f"{m.group(3)}-{m.group(2)}-{m.group(1)}" if m else ""
+    url = urllib.parse.urljoin(WEEKLY_LIST, links[0])
+    m = re.search(r"(\d{1,2})\.(\d{1,2})\.(\d{4})", urllib.parse.unquote(url))
+    week = f"{m.group(3)}-{int(m.group(2)):02d}-{int(m.group(1)):02d}" if m else ""
     return url, week
 
 
