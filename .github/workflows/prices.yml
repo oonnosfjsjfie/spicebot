@@ -1,0 +1,28 @@
+name: Save spice prices
+on:
+  schedule:
+    - cron: "17 */6 * * *"   # every 6 hours
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Add the latest prices to the history
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python backend/snapshot.py
+      - name: Save the history
+        run: |
+          if [ -n "$(git status --porcelain web/data)" ]; then
+            git config user.name "spicebot-prices"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add web/data
+            git commit -m "Update price history [skip render]"
+            git push
+          fi

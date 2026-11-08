@@ -9,6 +9,7 @@ Run on your computer:  python backend/server.py   then open http://localhost:800
 import json
 import mimetypes
 import os
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -17,6 +18,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+import sys  # noqa: E402
+sys.path.insert(0, str(HERE))
 WEB = (HERE.parent / "web").resolve()
 
 
@@ -60,6 +63,11 @@ How to answer:
     [[chart: Title | Label A=12 %; Label B=30 %]]   a bar chart, only with numbers you are confident of
   Describe what the visual shows in words; do not mention the tags themselves.
 - Write chemical formulas as plain text like C17H19NO3. Never use LaTeX or $ math notation.
+- PRICES and COMMODITY notes are live market data from the app (Spices Board of India, AI web search, IMF).
+  When asked about prices, use them: give the number, unit, date and source, say whether it's official or
+  found by web search, and remind that prices are indicative. You may explain likely reasons for moves
+  (harvest, weather, demand, exports), saying it's general reasoning. Never give trading or investment advice.
+- EHEDG notes list the real EHEDG guideline numbers and titles. Only cite guideline numbers from that list.
 - Language: {language}"""
 
 # A simple limit per visitor so nobody can use up the key's free quota.
@@ -83,7 +91,7 @@ class AIError(Exception):
         self.kind = kind
 
 
-def call_model(model, payload):
+def call_model(model, payload, with_sources=False):
     req = urllib.request.Request(
         f"{GEMINI_BASE}/models/{model}:generateContent",
         data=json.dumps(payload).encode("utf-8"),
@@ -99,11 +107,20 @@ def call_model(model, payload):
     text = "".join(p.get("text", "") for p in parts if not p.get("thought")).strip()
     if not text:
         raise AIError("empty", cands[0].get("finishReason", ""))
+    if with_sources:
+        meta = cands[0].get("groundingMetadata") or {}
+        srcs, seen = [], set()
+        for ch in meta.get("groundingChunks") or []:
+            w = ch.get("web") or {}
+            if w.get("uri") and w.get("title") not in seen:
+                seen.add(w.get("title"))
+                srcs.append({"title": w.get("title") or w.get("uri"), "url": w.get("uri")})
+        return text, srcs
     return text
 
 
-def ask_gemini(contents, system):
-    payload = {
+def ask_gemini(contents, system, payload=None, with_sources=False):
+    payload = payload or {
         "systemInstruction": {"parts": [{"text": system}]},
         "contents": contents,
         "generationConfig": {"temperature": 0.6, "maxOutputTokens": 4096},
@@ -113,9 +130,9 @@ def ask_gemini(contents, system):
     for model in MODELS:
         for attempt in range(2):
             try:
-                text = call_model(model, payload)
+                res = call_model(model, payload, with_sources)
                 print(f"[ok] Answered by {model}", flush=True)
-                return text, model
+                return (res[0], res[1], model) if with_sources else (res, model)
             except urllib.error.HTTPError as e:
                 body = e.read().decode("utf-8", "replace")[:300]
                 last = f"{e.code} {body}"
@@ -158,6 +175,64 @@ def build_contents(body):
     return contents
 
 
+# ---------------- Live market data ----------------
+import markets  # noqa: E402  (same folder)
+
+
+def _grounded(payload):
+    if not API_KEY:
+        raise RuntimeError("no GEMINI_API_KEY")
+    text, sources, model = ask_gemini(None, None, payload=payload, with_sources=True)
+    return text, sources, model
+
+
+def _ai_prices():
+    text, sources, model = _grounded(markets.grounded_payload(markets.price_prompt()))
+    j = markets.parse_json_block(text)
+    return {"india": markets.clean_rows(j.get("india"), "₹/kg"), "world": markets.clean_rows(j.get("world"), "US$/kg"),
+            "sources": sources[:12], "model": model}
+
+
+def _ehedg_news():
+    text, sources, model = _grounded(markets.grounded_payload(markets.ehedg_prompt()))
+    j = markets.parse_json_block(text)
+    items = [{k: str(i.get(k, ""))[:400] for k in ("title", "date", "kind", "summary", "source")} for i in (j.get("items") or [])[:8] if i.get("title")]
+    return {"items": items, "sources": sources[:10], "model": model}
+
+
+BOARD = markets.Cache("spices-board", markets.fetch_spices_board, ttl=15 * 60, retry=180)
+AIPRICES = markets.Cache("ai-prices", _ai_prices, ttl=3 * 3600, retry=900)
+COMMOD = markets.Cache("commodities", markets.fetch_commodities, ttl=6 * 3600, retry=600)
+EHEDG = markets.Cache("ehedg-news", _ehedg_news, ttl=12 * 3600, retry=1800)
+HISTORY_URL = "https://raw.githubusercontent.com/oonnosfjsjfie/spicebot/main/web/data/price-history.json"
+
+
+def _history():
+    try:
+        return json.loads(markets.http_get(HISTORY_URL, timeout=20))
+    except Exception:
+        f = WEB / "data" / "price-history.json"
+        return json.loads(f.read_text("utf-8")) if f.exists() else {"series": {}, "meta": {}}
+
+
+HISTORY = markets.Cache("history", _history, ttl=30 * 60, retry=300)
+VERSION = os.getenv("RENDER_GIT_COMMIT", "")[:12] or str(int((WEB / "index.html").stat().st_mtime if (WEB / "index.html").exists() else time.time()))
+STARTED = markets.now_iso()
+
+
+def prices_payload(force):
+    b = BOARD.get(force=force and (BOARD.at == 0 or time.time() - BOARD.at > 60))
+    a = AIPRICES.get(force=force and (AIPRICES.at == 0 or time.time() - AIPRICES.at > 1800)) if API_KEY else {"data": None, "error": "AI not set up"}
+    ad = a.get("data") or {}
+    return {
+        "india_official": b["data"] or [], "india_ai": ad.get("india", []), "world": ad.get("world", []),
+        "ai_sources": ad.get("sources", []),
+        "status": {"official": {k: b.get(k) for k in ("updated", "age_s", "refreshing", "error", "next_s")},
+                   "ai": {k: a.get(k) for k in ("updated", "age_s", "refreshing", "error", "next_s")}},
+        "server_time": markets.now_iso(),
+    }
+
+
 CSP_SAFE_TYPES = {".html", ".js", ".json", ".webmanifest", ".png", ".jpg", ".svg", ".ico", ".apk", ".txt", ".css", ".woff", ".woff2"}
 mimetypes.add_type("application/manifest+json", ".webmanifest")
 mimetypes.add_type("application/vnd.android.package-archive", ".apk")
@@ -198,7 +273,27 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self, head=False):
         path = self.path.split("?")[0].split("#")[0]
         if path == "/api/health":
-            return self.send_json(200, {"ok": True, "ai": bool(API_KEY)})
+            return self.send_json(200, {"ok": True, "ai": bool(API_KEY), "version": VERSION})
+        query = self.path.split("?", 1)[1] if "?" in self.path else ""
+        force = "fresh=1" in query
+        ip = (self.headers.get("x-forwarded-for") or self.client_address[0]).split(",")[0].strip()
+        if path.startswith("/api/") and force and not allowed(ip):
+            force = False
+        if path == "/api/version":
+            return self.send_json(200, {"version": VERSION, "started": STARTED})
+        if path == "/api/prices":
+            return self.send_json(200, prices_payload(force))
+        if path == "/api/history":
+            h = HISTORY.get()
+            return self.send_json(200, h["data"] or {"series": {}, "meta": {}})
+        if path == "/api/commodities":
+            c = COMMOD.get(force=force and (COMMOD.at == 0 or time.time() - COMMOD.at > 600))
+            return self.send_json(200, {**(c["data"] or {"items": [], "fx": None}), "status": {k: c.get(k) for k in ("updated", "age_s", "refreshing", "error", "next_s")}, "server_time": markets.now_iso()})
+        if path == "/api/ehedg/news":
+            if not API_KEY:
+                return self.send_json(200, {"items": [], "sources": [], "status": {"error": "AI not set up"}})
+            e = EHEDG.get(force=force and (EHEDG.at == 0 or time.time() - EHEDG.at > 3600))
+            return self.send_json(200, {**(e["data"] or {"items": [], "sources": []}), "status": {k: e.get(k) for k in ("updated", "age_s", "refreshing", "error", "next_s")}})
         if path in ("", "/"):
             path = "/index.html"
         try:
@@ -258,5 +353,7 @@ class Handler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "8000"))
     host = "0.0.0.0" if "PORT" in os.environ else "127.0.0.1"
+    # warm the caches so the first visitor gets data quickly
+    threading.Thread(target=lambda: (BOARD.get(), COMMOD.get()), daemon=True).start()
     print(f"SpiceBot running on http://{'localhost' if host == '127.0.0.1' else host}:{port}  (AI {'on' if API_KEY else 'off: no GEMINI_API_KEY'})", flush=True)
     ThreadingHTTPServer((host, port), Handler).serve_forever()

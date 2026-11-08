@@ -471,6 +471,101 @@ svg text { font-family: var(--body); }
 .qchip:hover { border-color: var(--accent); color: var(--accent); }
 .qchip.sheet { border-style: dashed; color: var(--accent); }
 .qchip:disabled { opacity: .55; cursor: default; }
+
+/* ---------- Prices + EHEDG ---------- */
+.nav-item.dot::after { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #d03b3b; margin-left: 5px; vertical-align: 2px; }
+.livebar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .86rem; margin-bottom: 12px; }
+.livebar .lmeta { color: var(--muted); flex: 1 1 260px; }
+.ldot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); display: inline-block; flex: none; }
+.ldot.on { background: #0ca30c; box-shadow: 0 0 0 0 rgba(12,163,12,.5); animation: lpulse 2s infinite; }
+@keyframes lpulse { 70% { box-shadow: 0 0 0 7px rgba(12,163,12,0); } 100% { box-shadow: 0 0 0 0 rgba(12,163,12,0); } }
+.seg { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 999px; width: max-content; max-width: 100%; overflow-x: auto; margin-bottom: 14px; background: var(--surface); }
+.segb { border: 0; background: none; padding: 7px 14px; border-radius: 999px; font-weight: 600; font-size: .9rem; color: var(--muted); white-space: nowrap; }
+.segb[aria-selected="true"] { background: var(--fg); color: var(--bg); }
+.pbody { padding: 16px; display: grid; gap: 18px; }
+.pblk h3 { margin: 0; font-size: 1.05rem; }
+.pblk .sub, .blk .sub { color: var(--muted); font-size: .86rem; margin: 4px 0 10px; }
+.prow { display: grid; grid-template-columns: minmax(0, 1.5fr) auto minmax(0, 1fr) 34px; gap: 4px 14px; align-items: center; padding: 10px 6px; border-top: 1px solid var(--line); cursor: pointer; }
+.prow:hover { background: var(--sunk, var(--surface)); }
+.pn { display: flex; flex-direction: column; min-width: 0; }
+.pn span, .pv span, .pd { color: var(--muted); font-size: .8rem; }
+.pv { text-align: right; display: flex; flex-direction: column; }
+.pv b { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.pv .conv { font-size: .76rem; }
+.pc { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.chg { font-weight: 700; font-size: .82rem; font-variant-numeric: tabular-nums; }
+.chg.up { color: #0a7d0a; } .chg.down { color: #c2362f; } .chg.flat { color: var(--muted); }
+:root[data-theme="dark"] .chg.up { color: #3fcf3f; } :root[data-theme="dark"] .chg.down { color: #ff7a6e; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .chg.up { color: #3fcf3f; } :root:not([data-theme="light"]) .chg.down { color: #ff7a6e; } }
+.star { border: 0; background: none; font-size: 1.25rem; line-height: 1; color: var(--muted); padding: 4px; border-radius: 6px; }
+.star.on { color: var(--spice); }
+.pdetail, .cdetail { padding: 10px 6px 14px; display: grid; gap: 8px; border-top: 1px dashed var(--line); }
+.cdetail { grid-column: 1 / -1; border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.cdetail h4 { margin: 0; }
+.lchart svg { width: 100%; height: auto; }
+.lchart .ln { fill: none; stroke: var(--spice); stroke-width: 2; stroke-linejoin: round; }
+.lchart .pt { fill: var(--surface); stroke: var(--spice); stroke-width: 2; }
+.lchart .grid { stroke: var(--line); stroke-width: 1; }
+.lchart .tick { fill: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+.lchart .guide { stroke: var(--muted); stroke-dasharray: 3 3; }
+.spark { width: 100%; height: 34px; }
+.spark .sl { fill: none; stroke: var(--spice); stroke-width: 1.6; }
+.spark .sd { fill: var(--spice); }
+.srcs { font-size: .82rem; color: var(--muted); margin-top: 8px; }
+.srcs ul { margin: 6px 0 0; padding-left: 18px; columns: 2 220px; }
+.srcs a, .srclink { color: var(--fg); }
+.srclink { font-size: .82rem; display: inline-block; margin-top: 8px; }
+.cgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.ccard { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; cursor: pointer; background: var(--surface); }
+.ccard:hover, .ccard.open { border-color: var(--fg); }
+.ctop { display: flex; justify-content: space-between; align-items: center; }
+.cg { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.cn { font-size: .95rem; }
+.cv b { font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.cv span { color: var(--muted); font-size: .8rem; }
+.cm { display: flex; gap: 10px; flex-wrap: wrap; }
+.tcard { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 8px; margin-top: 10px; }
+.thead { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: flex-start; }
+.tctl { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: .86rem; }
+.tctl select, .glrow select { margin-left: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--fg); padding: 4px 6px; font: inherit; font-size: .84rem; }
+.alerts { border: 1px solid #d03b3b; border-radius: 12px; padding: 12px; display: grid; gap: 6px; margin: 10px 0; }
+.alerts .al.up::before { content: "▲ "; color: #0a7d0a; } .alerts .al.down::before { content: "▼ "; color: #c2362f; }
+.alerts .btn { justify-self: start; }
+.pnote { font-size: .78rem; }
+.upbar { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 60; background: var(--fg); color: var(--bg); border-radius: 999px; padding: 8px 8px 8px 16px; display: flex; gap: 10px; align-items: center; box-shadow: 0 6px 24px rgba(0,0,0,.25); font-weight: 600; font-size: .9rem; max-width: calc(100vw - 32px); }
+.upbar .btn { background: var(--bg); color: var(--fg); border-color: var(--bg); border-radius: 999px; }
+.ehsum { display: flex; gap: 16px; align-items: center; padding: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+.ehsum p { margin: 4px 0 8px; color: var(--muted); }
+.ehacts { display: flex; gap: 8px; flex-wrap: wrap; }
+.ring { width: 80px; height: 80px; flex: none; }
+.ring .rbg { fill: none; stroke: var(--line); stroke-width: 8; } .ring .rfg { fill: none; stroke: var(--spice); stroke-width: 8; stroke-linecap: round; }
+.ring .rtx { fill: var(--fg); font-weight: 700; font-size: 16px; }
+.ehgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.ehgrid .blk { background: var(--surface); }
+.ehgrid h3 { margin: 0; font-size: 1.05rem; }
+.ckrow { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; border-top: 1px solid var(--line); font-size: .9rem; cursor: pointer; }
+.ckrow input { margin-top: 3px; width: 17px; height: 17px; accent-color: var(--spice); flex: none; }
+.ckrow em { color: var(--muted); font-style: normal; font-size: .78rem; white-space: nowrap; }
+.glrow { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); font-size: .88rem; }
+.glrow a { font-weight: 700; color: var(--fg); white-space: nowrap; }
+.glrow.st-applied a, .glrow.st-not-needed a { color: var(--muted); }
+.glrow.st-applied span:not(.tag)::after { content: " ✓"; color: #0a7d0a; font-weight: 700; }
+.glrow.wd { opacity: .55; }
+.glrow .tag { font-size: .7rem; border: 1px solid var(--line); border-radius: 999px; padding: 1px 7px; color: var(--muted); white-space: nowrap; }
+.ehcat input[type=search] { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--bg); color: var(--fg); font: inherit; width: 100%; }
+.ehmeta { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .84rem; }
+.ehmeta .btn { margin-left: auto; padding: 3px 9px; }
+.news { border-top: 1px solid var(--line); padding: 8px 0; display: grid; gap: 3px; }
+.news p { margin: 0; font-size: .88rem; }
+.news .kind { font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; border-radius: 999px; padding: 1px 7px; margin-right: 6px; background: var(--spice-soft, var(--line)); color: var(--fg); }
+@media (max-width: 820px) { .ehgrid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) {
+  .prow { grid-template-columns: minmax(0, 1fr) auto 30px; }
+  .prow .pc { grid-column: 1 / 3; grid-row: 2; flex-direction: row; gap: 10px; flex-wrap: wrap; }
+  .prow .star { grid-column: 3; grid-row: 1; }
+  .pbody { padding: 12px; }
+  .cgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .vizrow { display: grid; gap: 10px; margin-top: 8px; }
 .viz { margin: 0; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--surface); }
 .viz figcaption { font-size: .8rem; color: var(--muted); margin-top: 6px; }
@@ -721,6 +816,8 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
       <button type="button" class="nav-item" id="t-home" aria-current="page">Home</button>
       <button type="button" class="nav-item" id="t-sheet" aria-current="false">Spices</button>
       <button type="button" class="nav-item" id="t-explore" aria-current="false">Explore</button>
+      <button type="button" class="nav-item" id="t-prices" aria-current="false">Prices</button>
+      <button type="button" class="nav-item" id="t-ehedg" aria-current="false">EHEDG</button>
       <button type="button" class="nav-item" id="t-chat" aria-current="false">Chat</button>
     </nav>
     <div class="nav-right">
@@ -854,12 +951,28 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
       <section class="panel"><div class="explore" id="explore"></div></section>
     </div>
   </div>
+
+  <div class="view" id="v-prices" hidden>
+    <div class="page gut">
+      <div class="page-head"><h1>Prices</h1><p>Spice prices in India and around the world, global commodities, and a tracker for the ones you care about. Everything updates by itself while this page is open.</p></div>
+      <div class="livebar" id="pLive" aria-live="polite"></div>
+      <div class="seg" id="pSeg" role="tablist" aria-label="Price lists"></div>
+      <section class="panel pbody" id="pBody"></section>
+    </div>
+  </div>
+
+  <div class="view" id="v-ehedg" hidden>
+    <div class="page gut">
+      <div class="page-head"><h1>EHEDG tracker</h1><p>EHEDG, the European Hygienic Engineering &amp; Design Group, writes the best-known guidelines for building food equipment and factories that are easy to keep clean. Track your spice unit against them, and see the latest EHEDG news.</p></div>
+      <div id="ehedg"></div>
+    </div>
+  </div>
 </main>
 
 <footer class="foot-band gut">
   <div class="foot-grid">
     <div><div class="foot-brand"><span class="mark" aria-hidden="true"></span>SpiceBot</div><p>A friendly guide to the world's spices and herbs. Made in Kerala, the land of spices.</p></div>
-    <div><h4>Pages</h4><button class="fl" type="button" data-go="home">Home</button><button class="fl" type="button" data-go="sheet">Spice library</button><button class="fl" type="button" data-go="explore">Explore</button><button class="fl" type="button" data-go="chat">Chat with SpiceBot</button></div>
+    <div><h4>Pages</h4><button class="fl" type="button" data-go="home">Home</button><button class="fl" type="button" data-go="sheet">Spice library</button><button class="fl" type="button" data-go="explore">Explore</button><button class="fl" type="button" data-go="prices">Prices</button><button class="fl" type="button" data-go="ehedg">EHEDG tracker</button><button class="fl" type="button" data-go="chat">Chat with SpiceBot</button></div>
     <div><h4>Sources</h4><a href="https://en.wikipedia.org/wiki/List_of_culinary_herbs_and_spices" target="_blank" rel="noopener">Wikipedia (CC BY-SA)</a><a href="https://pubchem.ncbi.nlm.nih.gov/" target="_blank" rel="noopener">PubChem</a><a href="https://www.indianspices.com" target="_blank" rel="noopener">Spices Board India</a><a href="https://spices.res.in" target="_blank" rel="noopener">ICAR–IISR</a></div>
     <div><h4>Get SpiceBot</h4><a href="SpiceBot.apk" download id="footApp" hidden>Android app</a><span class="fnote">Works offline</span><span class="fnote">Light &amp; dark theme</span></div>
   </div>
@@ -1092,7 +1205,7 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
 
   /* ---------- Tabs ---------- */
   /* ---------- Pages (Neutrix-style top bar) + floating chat ---------- */
-  const VIEWS = ["home", "sheet", "explore"];
+  const VIEWS = ["home", "sheet", "explore", "prices", "ehedg"];
   function showTab(name) {
     if (name === "chat") { setChat(true); return; }
     if (!VIEWS.includes(name)) name = "home";
@@ -1106,6 +1219,8 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
     if (name === "explore") renderExplore();
     if (name === "sheet") drawStructures();
     if (name === "home") renderHome();
+    if (name === "prices") renderPrices();
+    if (name === "ehedg") renderEhedg();
     if (changed) scrollTo(0, 0);
     try { history.replaceState(null, "", location.pathname + location.search + (name === "home" ? "" : "#" + (name === "sheet" ? "spices" : name))); } catch {}
     armReveal();
@@ -2552,6 +2667,7 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
   let busy = false;
   function send(raw) {
     const text = String(raw || "").trim();
+    if (text === "__prices") { setChat(innerWidth > 900); showTab("prices"); return; }
     if (!text || busy) return;
     setChat(true);
     if (quiz && !/quiz/i.test(text)) quiz = null;
@@ -2574,6 +2690,8 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
           return;
         }
         typing.remove();
+        const mp = marketLocalAnswer(text);
+        if (mp) { botSay((navigator.onLine === false ? "*You're offline.* " : "") + mp.text, mp.chips); return; }
         renderLocal(r, text, navigator.onLine === false ? "You're offline." : "");
       } finally { busy = false; msgs.scrollTop = msgs.scrollHeight; }
     }, 260 + Math.random() * 200);
@@ -2607,6 +2725,7 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
     if (r && r.text && !ents.length && !p.cmps.length && !p.blends.length && (p.flv.length || p.regions.length)) lines.push("LIBRARY LIST: " + r.text.replace(/\*\*/g, "").slice(0, 1500));
     lastHits = books.length ? search(text + " " + ents.map(s => s.name + " " + s.latin).join(" "), 3) : [];
     lastHits.forEach(h => lines.push(`BOOK [${h.title}, p. ${h.p}]: ${h.text.slice(0, 800)}`));
+    const mk = marketContext(text); if (mk) lines.unshift(mk);
     return lines.join("\n").slice(0, 11000);
   }
   async function askAI(text, r) {
@@ -2806,6 +2925,463 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
 
   $("booksBtn").onclick = () => { const p = $("bookPanel"); p.hidden = !p.hidden; $("booksBtn").setAttribute("aria-expanded", String(!p.hidden)); };
 
+  /* ---------- Prices (India, world, commodities, tracker) + EHEDG tracker. Live: refreshes by itself. ---------- */
+  const MKT = {
+    prices: store.get("sb.prices.v1", null), comm: store.get("sb.comm.v1", null), hist: store.get("sb.hist.v1", null),
+    news: store.get("sb.ehnews.v1", null), busy: {}, got: {}, openC: null,
+  };
+  let watch = store.get("sb.watch", []); if (!Array.isArray(watch)) watch = [];
+  let seen = store.get("sb.seen", {}) || {};
+  let snaps = store.get("sb.snaps", {}) || {};
+  let pSeg = store.get("sb.pseg", "india");
+  const LIVE_MS = 3 * 60 * 1000;
+  const fmtN = (v, d) => v == null || !isFinite(v) ? "—" : Number(v).toLocaleString("en-IN", { maximumFractionDigits: d == null ? (Math.abs(v) >= 100 ? 0 : 2) : d, minimumFractionDigits: 0 });
+  const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const rowKey = r => slug(`${r.spice} ${r.market || ""} ${r.grade || ""} ${r.unit}`);
+  const ago = iso => {
+    if (!iso) return "never"; const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);
+    return s < 60 ? "just now" : s < 3600 ? Math.round(s / 60) + " min ago" : s < 86400 ? Math.round(s / 3600) + " h ago" : Math.round(s / 86400) + " days ago";
+  };
+  const niceDate = d => { if (!d) return ""; const t = Date.parse(d.length === 7 ? d + "-01" : d); return isNaN(t) ? d : new Date(t).toLocaleDateString("en-IN", d.length === 7 ? { month: "short", year: "numeric" } : { day: "numeric", month: "short", year: "numeric" }); };
+  async function getAPI(path, ms = 45000) {
+    if (navigator.onLine === false) return null;
+    const c = new AbortController(); const t = setTimeout(() => c.abort(), ms);
+    try { const r = await fetch(API_BASE + path, { signal: c.signal, cache: "no-store" }); return r.ok ? await r.json() : null; }
+    catch { return null; } finally { clearTimeout(t); }
+  }
+
+  /* history: shared (saved every 6 h by the server's scheduled job) + this device's own snapshots */
+  function snapRows(rows) {
+    let changed = false;
+    rows.forEach(r => {
+      if (!r.date) return;
+      const k = rowKey(r), s = snaps[k] = snaps[k] || [];
+      const last = s[s.length - 1];
+      if (last && last[0] === r.date) { if (last[1] !== r.price) { last[1] = r.price; changed = true; } return; }
+      s.push([r.date, r.price]); s.sort((a, b) => a[0] < b[0] ? -1 : 1); if (s.length > 250) s.splice(0, s.length - 250); changed = true;
+    });
+    if (changed) store.set("sb.snaps", snaps);
+  }
+  function seriesFor(k) {
+    const m = new Map();
+    ((MKT.hist && MKT.hist.series && MKT.hist.series[k]) || []).forEach(([d, v]) => m.set(d, v));
+    (snaps[k] || []).forEach(([d, v]) => m.set(d, v));
+    return [...m.entries()].sort((a, b) => a[0] < b[0] ? -1 : 1);
+  }
+  function prevOf(k, date, price) {
+    const s = seriesFor(k).filter(p => p[0] < date);
+    return s.length ? s[s.length - 1] : null;
+  }
+  const allRows = () => { const p = MKT.prices || {}; return [...(p.india_official || []), ...(p.india_ai || []), ...(p.world || [])]; };
+  const commItems = () => (MKT.comm && MKT.comm.items) || [];
+  const fxRate = () => { const f = MKT.comm && MKT.comm.fx; const pts = f && f.points; return pts && pts.length ? pts[pts.length - 1][1] : null; };
+
+  /* ---------- loading (live) ---------- */
+  async function loadPrices(force) {
+    if (MKT.busy.p) return; MKT.busy.p = true; paintLive();
+    const j = await getAPI("/api/prices" + (force ? "?fresh=1" : ""));
+    MKT.busy.p = false;
+    if (j) {
+      MKT.prices = j; MKT.got.p = Date.now(); store.set("sb.prices.v1", j); snapRows(allRows());
+      const st = j.status || {};
+      if ((st.official && st.official.refreshing) || (st.ai && st.ai.refreshing)) setTimeout(() => loadPrices(false), 12000);
+      checkAlerts();
+    }
+    afterLoad();
+  }
+  async function loadComm(force) {
+    if (MKT.busy.c) return; MKT.busy.c = true; paintLive();
+    const j = await getAPI("/api/commodities" + (force ? "?fresh=1" : ""));
+    MKT.busy.c = false;
+    if (j && (j.items || []).length) { MKT.comm = j; MKT.got.c = Date.now(); store.set("sb.comm.v1", j); checkAlerts(); }
+    else if (j && j.status && j.status.refreshing) setTimeout(() => loadComm(false), 12000);
+    afterLoad();
+  }
+  async function loadHist() {
+    const j = await getAPI("/api/history", 30000);
+    if (j && j.series) { MKT.hist = j; store.set("sb.hist.v1", j); afterLoad(); }
+  }
+  async function loadNews(force) {
+    if (MKT.busy.n) return; MKT.busy.n = true; if (tab === "ehedg") renderEhedg();
+    const j = await getAPI("/api/ehedg/news" + (force ? "?fresh=1" : ""), 90000);
+    MKT.busy.n = false;
+    if (j && (j.items || []).length) { MKT.news = { ...j, got: new Date().toISOString() }; store.set("sb.ehnews.v1", MKT.news); }
+    else if (j && j.status && j.status.refreshing) setTimeout(() => loadNews(false), 15000);
+    if (tab === "ehedg") renderEhedg();
+  }
+  function afterLoad() { paintLive(); if (tab === "prices") renderPricesBody(); paintBadge(); }
+  function refreshAll(force) { loadPrices(force); loadComm(force); if (force || !MKT.hist || Date.now() - (MKT.got.h || 0) > 30 * 60000) { MKT.got.h = Date.now(); loadHist(); } }
+
+  // live loop: every 3 minutes while the page is open and visible, and again whenever you come back to it
+  let nextAt = Date.now() + LIVE_MS;
+  setInterval(() => {
+    if (document.visibilityState !== "visible") return;
+    if (Date.now() >= nextAt) { nextAt = Date.now() + LIVE_MS; if (tab === "prices" || watch.length) refreshAll(false); if (tab === "ehedg" && (!MKT.news || Date.now() - Date.parse(MKT.news.got || 0) > 30 * 60000)) loadNews(false); }
+    paintLive();
+  }, 5000);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && (tab === "prices" || watch.length) && Date.now() - (MKT.got.p || 0) > 60000) { nextAt = Date.now() + LIVE_MS; refreshAll(false); } });
+  addEventListener("online", () => { if (tab === "prices" || watch.length) refreshAll(false); });
+
+  function paintLive() {
+    const box = $("pLive"); if (!box) return;
+    const online = navigator.onLine !== false, busy = MKT.busy.p || MKT.busy.c;
+    const st = (MKT.prices && MKT.prices.status) || {};
+    const secs = Math.max(0, Math.round((nextAt - Date.now()) / 1000));
+    box.replaceChildren();
+    const dot = el("span", "ldot" + (online ? " on" : "")); box.append(dot);
+    box.append(el("b", null, !online ? "Offline · showing saved prices" : busy ? "Updating…" : "Live"));
+    const parts = [];
+    if (st.official && st.official.updated) parts.push(`Spices Board checked ${ago(st.official.updated)}`);
+    if (st.ai && st.ai.updated) parts.push(`AI web search ${ago(st.ai.updated)}`);
+    if (MKT.comm && MKT.comm.status && MKT.comm.status.updated) parts.push(`commodities ${ago(MKT.comm.status.updated)}`);
+    if (online && !busy) parts.push(`next check in ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`);
+    box.append(el("span", "lmeta", parts.join(" · ")));
+    const b = el("button", "btn alt", busy ? "Updating…" : "↻ Refresh now"); b.type = "button"; b.disabled = busy || !online;
+    b.onclick = () => { nextAt = Date.now() + LIVE_MS; refreshAll(true); };
+    box.append(b);
+  }
+
+  /* ---------- watchlist + alerts ---------- */
+  const isWatched = k => watch.some(w => w.k === k);
+  function toggleWatch(item) {
+    if (isWatched(item.k)) watch = watch.filter(w => w.k !== item.k);
+    else { watch.push({ k: item.k, name: item.name, unit: item.unit, kind: item.kind, th: 5 }); seen[item.k] = item.price; store.set("sb.seen", seen); }
+    store.set("sb.watch", watch); paintBadge();
+  }
+  function currentOf(w) {
+    if (w.kind === "c") { const c = commItems().find(x => "c:" + x.id === w.k); if (!c) return null; const p = c.points[c.points.length - 1]; return { price: p[1], date: p[0], unit: c.unit, src: c.source }; }
+    const r = allRows().find(x => rowKey(x) === w.k); return r ? { price: r.price, date: r.date, unit: r.unit, src: r.source } : null;
+  }
+  let alerts = [];
+  function checkAlerts() {
+    alerts = [];
+    watch.forEach(w => {
+      const cur = currentOf(w); if (!cur || seen[w.k] == null) return;
+      const ch = (cur.price - seen[w.k]) / seen[w.k] * 100;
+      if (Math.abs(ch) >= (w.th || 5)) alerts.push({ w, cur, ch });
+    });
+    paintBadge();
+    if (alerts.length && document.visibilityState !== "visible" && store.get("sb.notify", false) && "Notification" in window && Notification.permission === "granted") {
+      const a = alerts[0];
+      try { new Notification("SpiceBot price alert", { body: `${a.w.name}: ${a.ch > 0 ? "up" : "down"} ${Math.abs(a.ch).toFixed(1)}% to ${fmtN(a.cur.price)} ${a.cur.unit}`, icon: "icon-192.png", tag: "sb-" + a.w.k }); } catch {}
+    }
+  }
+  function paintBadge() { const t = $("t-prices"); if (t) t.classList.toggle("dot", alerts.length > 0); }
+  function markSeen() { watch.forEach(w => { const c = currentOf(w); if (c) seen[w.k] = c.price; }); store.set("sb.seen", seen); checkAlerts(); renderPricesBody(); }
+
+  /* ---------- charts ---------- */
+  function spark(points, W = 120, H = 34) {
+    const svg = sv("svg", { class: "spark", viewBox: `0 0 ${W} ${H}`, "aria-hidden": "true" });
+    if (!points || points.length < 2) return svg;
+    const vs = points.map(p => p[1]), mn = Math.min(...vs), mx = Math.max(...vs), rg = mx - mn || 1;
+    const xy = points.map((p, i) => [i / (points.length - 1) * (W - 4) + 2, H - 3 - (p[1] - mn) / rg * (H - 6)]);
+    svg.append(sv("polyline", { points: xy.map(p => p.map(n => n.toFixed(1)).join(",")).join(" "), class: "sl" }));
+    const l = xy[xy.length - 1]; svg.append(sv("circle", { cx: l[0], cy: l[1], r: 2.4, class: "sd" }));
+    return svg;
+  }
+  function lineChart(points, unit, label) {
+    const box = el("div", "lchart");
+    if (!points || points.length < 2) { box.append(el("p", "note", points && points.length === 1 ? `Only one price saved so far (${fmtN(points[0][1])} ${unit} on ${niceDate(points[0][0])}). The chart fills in as SpiceBot saves new prices every few hours.` : "No history yet. SpiceBot saves prices every few hours, so the chart fills in over the next days.")); return box; }
+    const W = Math.round(Math.max(280, Math.min(720, (box.clientWidth || $("pBody")?.clientWidth || 600) - 20))), H = 190, L = 54, R = 12, T = 12, B = 26;
+    const vs = points.map(p => p[1]); let mn = Math.min(...vs), mx = Math.max(...vs); const pad = (mx - mn) * 0.08 || Math.abs(mx) * 0.05 || 1; mn -= pad; mx += pad;
+    const x = i => L + i / (points.length - 1) * (W - L - R), y = v => T + (1 - (v - mn) / (mx - mn)) * (H - T - B);
+    const svg = sv("svg", { class: "chart", viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `${label}: ${points.length} prices from ${niceDate(points[0][0])} to ${niceDate(points[points.length - 1][0])}, latest ${fmtN(vs[vs.length - 1])} ${unit}` });
+    for (let g = 0; g <= 3; g++) { const v = mn + (mx - mn) * g / 3, yy = y(v); svg.append(sv("line", { x1: L, x2: W - R, y1: yy, y2: yy, class: "grid" })); svg.append(sv("text", { x: L - 6, y: yy + 3, "text-anchor": "end", class: "tick" }, fmtN(v))); }
+    [0, Math.floor((points.length - 1) / 2), points.length - 1].forEach((i, n) => svg.append(sv("text", { x: x(i), y: H - 8, "text-anchor": n === 0 ? "start" : n === 2 ? "end" : "middle", class: "tick" }, niceDate(points[i][0]))));
+    svg.append(sv("polyline", { points: points.map((p, i) => `${x(i).toFixed(1)},${y(p[1]).toFixed(1)}`).join(" "), class: "ln" }));
+    points.forEach((p, i) => { const c = sv("circle", { cx: x(i), cy: y(p[1]), r: points.length > 40 ? 0 : 3, class: "pt" }); svg.append(c); });
+    const hit = sv("rect", { x: L, y: T, width: W - L - R, height: H - T - B, fill: "transparent" });
+    const guide = sv("line", { class: "guide", y1: T, y2: H - B, x1: -9, x2: -9 }); svg.append(guide, hit);
+    const pick = e => { const r = svg.getBoundingClientRect(); const px = (e.clientX - r.left) / r.width * W; const i = Math.max(0, Math.min(points.length - 1, Math.round((px - L) / (W - L - R) * (points.length - 1)))); guide.setAttribute("x1", x(i)); guide.setAttribute("x2", x(i)); return i; };
+    hit.addEventListener("pointermove", e => { const i = pick(e); tt.innerHTML = `<b>${esc(fmtN(points[i][1]))} ${esc(unit)}</b><br>${esc(niceDate(points[i][0]))}`; tt.hidden = false; const r = svg.getBoundingClientRect(); tt.style.left = Math.min(innerWidth - 160, e.clientX + 12) + "px"; tt.style.top = (e.clientY - 40) + "px"; });
+    hit.addEventListener("pointerleave", () => { tt.hidden = true; guide.setAttribute("x1", -9); guide.setAttribute("x2", -9); });
+    box.append(svg);
+    return box;
+  }
+
+  /* ---------- Prices page ---------- */
+  function segBtns() {
+    const seg = $("pSeg"); seg.replaceChildren();
+    [["india", "India"], ["world", "World"], ["comm", "Commodities"], ["track", "My tracker"]].forEach(([k, label]) => {
+      const b = el("button", "segb", label + (k === "track" && watch.length ? ` (${watch.length})` : "")); b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", String(pSeg === k));
+      b.onclick = () => { pSeg = k; store.set("sb.pseg", k); segBtns(); renderPricesBody(); };
+      seg.append(b);
+    });
+  }
+  function renderPrices() {
+    segBtns(); paintLive(); renderPricesBody();
+    if (!MKT.got.p || Date.now() - MKT.got.p > 60000) { nextAt = Date.now() + LIVE_MS; refreshAll(false); }
+  }
+  function starBtn(item) {
+    const b = el("button", "star" + (isWatched(item.k) ? " on" : ""), isWatched(item.k) ? "★" : "☆"); b.type = "button";
+    b.title = isWatched(item.k) ? "Stop tracking" : "Track this price"; b.setAttribute("aria-label", b.title + ": " + item.name);
+    b.onclick = e => { e.stopPropagation(); toggleWatch(item); b.textContent = isWatched(item.k) ? "★" : "☆"; b.classList.toggle("on", isWatched(item.k)); segBtns(); };
+    return b;
+  }
+  function priceRow(r, conv) {
+    const k = rowKey(r), prev = prevOf(k, r.date, r.price);
+    const row = el("div", "prow");
+    const a = el("div", "pn"); a.append(el("b", null, r.spice), el("span", null, [r.market, r.grade].filter(Boolean).join(" · ")));
+    const p = el("div", "pv");
+    p.append(el("b", null, `${r.unit.startsWith("US$") ? "$" : "₹"}${fmtN(r.price)}`), el("span", null, r.unit.replace(/^(₹|US\$)/, "per").replace("per/", "per ")));
+    if (conv && fxRate()) p.append(el("span", "conv", `≈ ₹${fmtN(r.price * fxRate(), 0)}/kg`));
+    const c = el("div", "pc");
+    if (prev && prev[1]) { const ch = (r.price - prev[1]) / prev[1] * 100; c.append(el("span", "chg " + (ch > 0.05 ? "up" : ch < -0.05 ? "down" : "flat"), `${ch > 0.05 ? "▲" : ch < -0.05 ? "▼" : "■"} ${Math.abs(ch).toFixed(1)}%`)); c.title = `Was ${fmtN(prev[1])} on ${niceDate(prev[0])}`; }
+    else if (r.trend) c.append(el("span", "chg " + (r.trend === "up" ? "up" : r.trend === "down" ? "down" : "flat"), r.trend === "up" ? "▲ rising" : r.trend === "down" ? "▼ falling" : "■ steady"));
+    c.append(el("span", "pd", [niceDate(r.date), r.source].filter(Boolean).join(" · ")));
+    row.append(a, p, c, starBtn({ k, name: `${r.spice}${r.market ? " · " + r.market : ""}`, unit: r.unit, kind: "s", price: r.price }));
+    row.tabIndex = 0; row.setAttribute("role", "button"); row.setAttribute("aria-label", `${r.spice}, ${fmtN(r.price)} ${r.unit}. Show price history`);
+    const open = () => { const nx = row.nextElementSibling; if (nx && nx.classList.contains("pdetail")) { nx.remove(); return; } const d = el("div", "pdetail"); row.after(d); d.append(lineChart(seriesFor(k), r.unit, r.spice)); const ask = el("button", "qchip", `Ask SpiceBot about ${r.spice} prices`); ask.type = "button"; ask.onclick = () => send(`What is moving the price of ${r.spice} right now?`); d.append(ask); };
+    row.onclick = open; row.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
+    return row;
+  }
+  function sourcesList(srcs) {
+    const d = el("details", "srcs"); d.append(el("summary", null, `Web sources the AI used (${srcs.length})`));
+    const ul = el("ul"); srcs.forEach(s => { const li = el("li"); const a = el("a", null, s.title); a.href = s.url; a.target = "_blank"; a.rel = "noopener"; li.append(a); ul.append(li); }); d.append(ul);
+    return d;
+  }
+  function emptyNote(msg) { return el("p", "note", msg); }
+  function renderPricesBody() {
+    const body = $("pBody"); if (!body || tab !== "prices") return;
+    body.replaceChildren();
+    const P = MKT.prices || {}, st = P.status || {}, online = navigator.onLine !== false;
+    if (pSeg === "india") {
+      const s1 = el("section", "pblk"); s1.append(el("h3", null, "Official prices · Spices Board of India"), el("p", "sub", "Daily market prices published by the Spices Board (Ministry of Commerce), Kochi. Tap a price to see its history."));
+      (P.india_official || []).forEach(r => s1.append(priceRow(r)));
+      if (!(P.india_official || []).length) s1.append(emptyNote(!online ? "You're offline and no prices are saved yet. Connect once and they're kept for offline use." : st.official && st.official.error ? "The Spices Board website isn't answering right now. SpiceBot will try again shortly." : "Loading the latest Spices Board prices…"));
+      const a = el("a", "srclink", "Open the Spices Board price page"); a.href = "https://indianspices.com/marketing/price/domestic/current-market-price"; a.target = "_blank"; a.rel = "noopener"; s1.append(a);
+      const s2 = el("section", "pblk"); s2.append(el("h3", null, "More Indian prices · found by SpiceBot's AI"), el("p", "sub", "Gemini searches the web for recent auction and wholesale prices (cardamom, turmeric, chilli, jeera and more). Each comes with its source; check it before buying or selling."));
+      (P.india_ai || []).forEach(r => s2.append(priceRow(r)));
+      if (!(P.india_ai || []).length) s2.append(emptyNote(!online ? "Saved AI prices will appear here once you've been online." : st.ai && st.ai.refreshing ? "SpiceBot's AI is searching the web for prices. This takes up to a minute…" : st.ai && st.ai.error ? "The AI price search isn't available right now. It will try again soon." : "Searching for prices…"));
+      if ((P.ai_sources || []).length) s2.append(sourcesList(P.ai_sources));
+      body.append(s1, s2);
+    } else if (pSeg === "world") {
+      const s = el("section", "pblk"); s.append(el("h3", null, "World spice prices · export markets"), el("p", "sub", "International and export prices in US dollars per kg, found by SpiceBot's AI from recent trade reports." + (fxRate() ? ` Rupee amounts use today's rate of ₹${fmtN(fxRate(), 2)} per US$ (Federal Reserve).` : "")));
+      (P.world || []).forEach(r => s.append(priceRow(r, true)));
+      if (!(P.world || []).length) s.append(emptyNote(!online ? "Saved world prices will appear here once you've been online." : st.ai && st.ai.refreshing ? "SpiceBot's AI is searching the web for world prices. This takes up to a minute…" : st.ai && st.ai.error ? "The AI price search isn't available right now. It will try again soon." : "Searching for prices…"));
+      if ((P.ai_sources || []).length) s.append(sourcesList(P.ai_sources));
+      body.append(s);
+    } else if (pSeg === "comm") {
+      const s = el("section", "pblk"); s.append(el("h3", null, "Global commodities"), el("p", "sub", "Monthly world benchmark prices from the IMF (through the St. Louis Fed). New months appear as soon as the IMF publishes them. Tap a card for five years of history."));
+      const grid = el("div", "cgrid");
+      commItems().forEach(c => {
+        const pts = c.points, last = pts[pts.length - 1], prev = pts[pts.length - 2], yr = pts[pts.length - 13];
+        const card = el("div", "ccard" + (MKT.openC === c.id ? " open" : "")); card.tabIndex = 0; card.setAttribute("role", "button");
+        const top = el("div", "ctop"); top.append(el("span", "cg", c.group), starBtn({ k: "c:" + c.id, name: c.name, unit: c.unit, kind: "c", price: last[1] }));
+        card.append(top, el("b", "cn", c.name));
+        const v = el("div", "cv"); v.append(el("b", null, fmtN(last[1])), el("span", null, " " + c.unit)); card.append(v);
+        const ch = prev ? (last[1] - prev[1]) / prev[1] * 100 : null, chy = yr ? (last[1] - yr[1]) / yr[1] * 100 : null;
+        const m = el("div", "cm");
+        if (ch != null) m.append(el("span", "chg " + (ch > 0.05 ? "up" : ch < -0.05 ? "down" : "flat"), `${ch > 0.05 ? "▲" : ch < -0.05 ? "▼" : "■"} ${Math.abs(ch).toFixed(1)}% month`));
+        if (chy != null) m.append(el("span", "chg " + (chy > 0.05 ? "up" : chy < -0.05 ? "down" : "flat"), `${chy > 0 ? "+" : ""}${chy.toFixed(0)}% year`));
+        card.append(m, spark(pts.slice(-24)), el("span", "pd", niceDate(last[0].slice(0, 7))));
+        const open = () => { MKT.openC = MKT.openC === c.id ? null : c.id; renderPricesBody(); };
+        card.onclick = open; card.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
+        grid.append(card);
+        if (MKT.openC === c.id) { const d = el("div", "cdetail"); d.append(el("h4", null, `${c.name} · ${c.unit}`), lineChart(pts, c.unit, c.name)); const a = el("a", "srclink", "Source: " + c.source); a.href = c.url; a.target = "_blank"; a.rel = "noopener"; d.append(a); grid.append(d); }
+      });
+      if (!commItems().length) grid.append(emptyNote(!online ? "You're offline and no commodity prices are saved yet." : "Loading commodity prices…"));
+      s.append(grid); body.append(s);
+    } else {
+      const s = el("section", "pblk"); s.append(el("h3", null, "My tracker"), el("p", "sub", "Tap ☆ next to any price to track it. SpiceBot checks for changes every few minutes while it's open and tells you when one moves past your alert level."));
+      if (alerts.length) {
+        const al = el("div", "alerts"); al.append(el("b", null, `🔔 ${alerts.length} price${alerts.length > 1 ? "s" : ""} moved since you last looked`));
+        alerts.forEach(a => al.append(el("div", "al " + (a.ch > 0 ? "up" : "down"), `${a.w.name}: ${a.ch > 0 ? "up" : "down"} ${Math.abs(a.ch).toFixed(1)}%, from ${fmtN(seen[a.w.k])} to ${fmtN(a.cur.price)} ${a.cur.unit}`)));
+        const ok = el("button", "btn", "Got it"); ok.type = "button"; ok.onclick = markSeen; al.append(ok); s.append(al);
+      }
+      if ("Notification" in window) {
+        const on = store.get("sb.notify", false) && Notification.permission === "granted";
+        const nb = el("button", "btn alt", on ? "🔔 Alerts on this device: on" : "🔔 Also alert me with a notification"); nb.type = "button";
+        nb.onclick = async () => { if (on) { store.set("sb.notify", false); } else { const p = await Notification.requestPermission(); store.set("sb.notify", p === "granted"); } renderPricesBody(); };
+        s.append(nb);
+      }
+      if (!watch.length) s.append(emptyNote("You're not tracking anything yet. Open India, World or Commodities and tap ☆ on the prices you care about."));
+      watch.forEach(w => {
+        const cur = currentOf(w);
+        const card = el("div", "tcard");
+        const h = el("div", "thead"); const nm = el("div", "pn"); nm.append(el("b", null, w.name), el("span", null, cur ? `${fmtN(cur.price)} ${cur.unit} · ${niceDate(cur.date)}` : "Waiting for the latest price…"));
+        h.append(nm);
+        if (cur && seen[w.k] != null) { const ch = (cur.price - seen[w.k]) / seen[w.k] * 100; h.append(el("span", "chg " + (ch > 0.05 ? "up" : ch < -0.05 ? "down" : "flat"), `${ch > 0.05 ? "▲" : ch < -0.05 ? "▼" : "■"} ${Math.abs(ch).toFixed(1)}% since you started tracking or last looked`)); }
+        card.append(h);
+        const pts = w.kind === "c" ? (commItems().find(x => "c:" + x.id === w.k) || {}).points : seriesFor(w.k);
+        card.append(lineChart(pts, w.unit, w.name));
+        const ctl = el("div", "tctl");
+        const lab = el("label", null, "Alert me when it moves "); const sel = el("select");
+        [2, 5, 10, 20].forEach(n => { const o = el("option", null, `${n}% or more`); o.value = n; if ((w.th || 5) === n) o.selected = true; sel.append(o); });
+        sel.onchange = () => { w.th = +sel.value; store.set("sb.watch", watch); checkAlerts(); };
+        lab.append(sel); ctl.append(lab);
+        const ask = el("button", "qchip", "Ask SpiceBot why"); ask.type = "button"; ask.onclick = () => send(`Why is the price of ${w.name.split(" · ")[0]} ${cur && seen[w.k] != null && cur.price < seen[w.k] ? "falling" : "changing"}?`);
+        const rm = el("button", "qchip", "Stop tracking"); rm.type = "button"; rm.onclick = () => { toggleWatch(w); segBtns(); renderPricesBody(); };
+        ctl.append(ask, rm); card.append(ctl);
+        s.append(card);
+      });
+      body.append(s);
+    }
+    const n = el("p", "note pnote", "Prices are indicative, for information only, and can differ from what you'll pay or get. AI-found prices can be wrong; check the source. Not financial advice.");
+    body.append(n);
+  }
+
+  /* ---------- EHEDG tracker ---------- */
+  const EH_BASE = "https://www.ehedg.org/guidelines-working-groups/guidelines/guidelines/detail/";
+  const EH_LINK = { 8: "hygienic-design-principles", 13: "hygienic-design-of-equipment-for-open-processing", 22: "general-hygienic-design-criteria-for-the-safe-processing-of-dry-particulate-materials", 33: "hygienic-engineering-of-discharging-systems-for-dry-particulate-materials", 36: "hygienic-engineering-of-transfer-systems-for-dry-particulate-materials", 40: "hygienic-engineering-of-valves-in-process-lines-for-dry-particulate-materials", 41: "hygienic-engineering-of-diverter-valves-in-process-lines-for-dry-particulate-materials", 44: "hygienic-design-principles-for-food-factories", 53: "hygienic-engineering-of-bulk-pack-off-systems-in-process-lines-for-dry-particulate-materials" };
+  // [number, title, relevant to spice / dry food processing, withdrawn]
+  const EH_GL = [["1","Continuous pasteurization of liquid food"],["2","A method for assessing the in-place cleanability of food processing equipment"],["3","Microbiologically safe aseptic packing of food products",0,1],["4","Assessment of in-line pasteurisation of food processing equipment",0,1],["5","Assessment of in-line sterilisability of food processing equipment"],["6","Continuous UHT sterilization of liquid food"],["7","Assessing bacteria-tightness of food processing equipment"],["8","Hygienic design principles",1],["9","Welding stainless steel to meet hygienic requirements"],["10","Hygienic design of closed equipment for processing liquid food"],["11","Hygienic packing of food products",0,1],["12","Continuous or semi-continuous flow thermal treatment of liquid particulate foods"],["13","Hygienic design criteria for equipment used in wet cleaned open food-processing environments"],["14","Requirements for valves in hygienic and aseptic processes"],["15","Assessing in-place cleanability of moderately sized equipment",0,1],["16","Hygienic pipe couplings"],["17","Hygienic design of pumps, homogenizers and dampening devices"],["18","Chemical treatment of stainless steel surfaces"],["19","Assessing the bacterial impermeability of hydrophobic membrane filters"],["20","Hygienic design and safe use of mixproof valves"],["21","Challenge tests for packing machines for liquid and semi-liquid products",0,1],["22","General hygienic design criteria for the safe processing of dry particulate materials",1],["23 P1","Use of H1 & HT1 registered lubricants",1],["23 P2","Production of H1 & HT1 food grade registered lubricants"],["24","Prevention and control of Legionella spp. in food factories",0,1],["25","Design of mechanical seals for hygienic and aseptic applications"],["26","Hygienic engineering of plants for processing dry particulate materials",0,1],["27","Safe storage and distribution of water in food factories",0,1],["28","Safe and hygienic treatment, storage and distribution of water in food and beverage factories"],["29","Hygienic design of packing systems for solid foodstuffs, part 1: general considerations",1],["29 P2","Hygienic design of packaging systems for solid foodstuffs, part 2: thermoforming packaging machinery"],["30","Air handling in the food industry",0,1],["31","Hygienic engineering of spray dryer and fluid bed plants"],["32","Materials of construction for equipment in contact with food",1],["33","Hygienic engineering of discharging systems for dry particulate materials",1],["34","Integrating hygienic entities"],["35","Hygienic welding of stainless steel tubing in the food processing industry"],["36","Hygienic engineering of transfer systems for dry particulate materials",1],["37","Hygienic design and application of sensors, part 1"],["38","Hygienic engineering of rotary valves in process lines for dry particulate materials",1],["39","Design principles for equipment and process areas for aseptic food manufacturing"],["40","Hygienic engineering of valves in process lines for dry particulate materials",1],["41","Hygienic engineering of diverter valves in process lines for dry particulate materials",1],["42","Disc stack centrifuges: design and cleanability"],["43","Hygienic design of belt conveyors for the food industry",1],["44","Hygienic design principles for food factories",1],["44 P2","Managing building work and equipment installation/removal during food production",1],["45","Cleaning validation, monitoring and verification",1],["46","Aseptic and hygienic filling machines"],["47","Air handling systems in the food industry: air quality control for building ventilation",1],["48","Elastomeric seals",1],["49","Hygienic design requirements for processing fresh fish"],["50","Hygienic design requirements for CIP installations"],["51","Hygienic design aspects for tank and vessel cleaning"],["52","Basic principles of cleaning and disinfection in food manufacturing",1],["53","Hygienic engineering of bulk pack-off systems in process lines for dry particulate materials",1],["54","Testing of hygienic weld joints"],["55","Hygienic design requirements for bakery equipment"],["57","A method for the assessment of open process equipment cleanability"],["58","Hygienic design risk management",1],["62 P1","Hygienic design criteria for robotic systems, part 1: robots"],["65","Sampling systems for representative liquid sampling"]];
+  const EH_CHECK = [
+    ["Surfaces that touch spices are smooth, non-porous and don't corrode", "8, 32"],
+    ["All materials and plastics in contact with product are food-grade", "32"],
+    ["No ledges, crevices or dead corners where powder can build up", "8, 22"],
+    ["Dry areas stay dry; anything wet-cleaned is dried completely before use", "22"],
+    ["Equipment empties completely and opens easily for dry cleaning and inspection", "22, 33"],
+    ["Conveying, valves and discharge points are built for dry powders and granules", "36, 38, 40, 41"],
+    ["Bulk packing (bags, big bags) keeps product enclosed and is easy to clean", "53"],
+    ["Belt conveyors can be cleaned with no hidden spots", "43"],
+    ["Dust is controlled and the dust-explosion risk has been assessed", "22"],
+    ["The building separates raw spices from cleaned or sterilised product (hygienic zones)", "44"],
+    ["Air is filtered and controlled to the right quality for each zone", "47"],
+    ["Lubricants that could touch product are food-grade H1", "23 P1"],
+    ["Seals and gaskets are suitable elastomers, checked and replaced on schedule", "48"],
+    ["Cleaning methods are written down, validated and checked regularly", "45, 52"],
+    ["Building work and machine changes are managed so they can't contaminate production", "44 P2"],
+    ["A hygienic design risk assessment has been done for each line", "58"],
+    ["New machines are chosen with EHEDG certification where possible", "Certification"],
+  ];
+  const EH_ST = ["To read", "Reading", "Applied", "Not needed"];
+  let eh = store.get("sb.ehedg", { ck: {}, gl: {} }) || { ck: {}, gl: {} };
+  let ehQ = "", ehAll = false;
+  const saveEh = () => store.set("sb.ehedg", eh);
+  function glLink(no) { const n = parseInt(no, 10); return EH_LINK[n] && !/P2/.test(no) ? EH_BASE + EH_LINK[n] : "https://ehedg.org/guidelines"; }
+  function renderEhedg() {
+    const root = $("ehedg"); if (!root) return;
+    root.replaceChildren();
+    const doneCk = EH_CHECK.filter((_, i) => eh.ck[i]).length, rel = EH_GL.filter(g => g[2] && !g[3]);
+    const applied = rel.filter(g => eh.gl[g[0]] === "Applied" || eh.gl[g[0]] === "Not needed").length;
+    // summary
+    const sum = el("section", "panel ehsum");
+    const pct = Math.round(doneCk / EH_CHECK.length * 100);
+    const ring = sv("svg", { viewBox: "0 0 80 80", class: "ring", role: "img", "aria-label": `${pct}% of the checklist done` });
+    ring.append(sv("circle", { cx: 40, cy: 40, r: 32, class: "rbg" }), sv("circle", { cx: 40, cy: 40, r: 32, class: "rfg", "stroke-dasharray": `${(pct / 100 * 201).toFixed(1)} 201`, transform: "rotate(-90 40 40)" }), sv("text", { x: 40, y: 45, "text-anchor": "middle", class: "rtx" }, pct + "%"));
+    const st = el("div"); st.append(el("b", null, "Your spice unit's hygienic design"), el("p", null, `${doneCk} of ${EH_CHECK.length} checks done · ${applied} of ${rel.length} key guidelines applied`));
+    const acts = el("div", "ehacts");
+    const cp = el("button", "btn alt", "Copy report"); cp.type = "button";
+    cp.onclick = async () => {
+      const lines = ["SpiceBot · EHEDG tracker report · " + new Date().toLocaleDateString("en-IN"), "", `Checklist: ${doneCk}/${EH_CHECK.length} done`];
+      EH_CHECK.forEach((c, i) => lines.push(`${eh.ck[i] ? "[x]" : "[ ]"} ${c[0]} (GL ${c[1]})`));
+      lines.push("", "Key guidelines:"); rel.forEach(g => lines.push(`GL ${g[0]} ${g[1]}: ${eh.gl[g[0]] || "To read"}`));
+      try { await navigator.clipboard.writeText(lines.join("\n")); cp.textContent = "Copied ✓"; } catch { cp.textContent = "Couldn't copy"; }
+      setTimeout(() => cp.textContent = "Copy report", 2000);
+    };
+    const ask = el("button", "btn alt", "Ask SpiceBot"); ask.type = "button"; ask.onclick = () => send("Which EHEDG guidelines matter most for a small spice grinding and packing unit, and where should I start?");
+    acts.append(cp, ask); st.append(acts);
+    sum.append(ring, st); root.append(sum);
+    const grid = el("div", "ehgrid");
+    // checklist
+    const ck = el("section", "panel blk"); ck.append(el("h3", null, "Hygienic design checklist for spice processing"), el("p", "sub", "Tick what's already true in your unit. Saved on this device."));
+    EH_CHECK.forEach((c, i) => {
+      const lab = el("label", "ckrow"); const box = el("input"); box.type = "checkbox"; box.checked = !!eh.ck[i];
+      box.onchange = () => { eh.ck[i] = box.checked; saveEh(); renderEhedg(); };
+      const tx = el("span"); tx.append(document.createTextNode(c[0] + " "), el("em", null, /^\d/.test(c[1]) ? "GL " + c[1] : c[1]));
+      lab.append(box, tx); ck.append(lab);
+    });
+    // key guidelines
+    const kg = el("section", "panel blk"); kg.append(el("h3", null, "Key guidelines for dry food and spices"), el("p", "sub", "Track how far you've got with each one."));
+    rel.forEach(g => {
+      const row = el("div", "glrow");
+      const a = el("a", null, `GL ${g[0]}`); a.href = glLink(g[0]); a.target = "_blank"; a.rel = "noopener";
+      const t = el("span", null, g[1]);
+      const sel = el("select"); sel.setAttribute("aria-label", "Status of GL " + g[0]);
+      EH_ST.forEach(s => { const o = el("option", null, s); if ((eh.gl[g[0]] || "To read") === s) o.selected = true; sel.append(o); });
+      sel.onchange = () => { eh.gl[g[0]] = sel.value; saveEh(); renderEhedg(); };
+      row.className = "glrow st-" + slug(eh.gl[g[0]] || "To read");
+      row.append(a, t, sel); kg.append(row);
+    });
+    // news (live)
+    const nw = el("section", "panel blk"); nw.append(el("h3", null, "Latest from EHEDG"));
+    const N = MKT.news;
+    const meta = el("div", "ehmeta"); meta.append(el("span", "ldot" + (navigator.onLine !== false ? " on" : "")), el("span", null, MKT.busy.n ? "SpiceBot's AI is searching for EHEDG news…" : N && N.got ? `Found by SpiceBot's AI · checked ${ago(N.got)}` : navigator.onLine === false ? "Offline" : "Not checked yet"));
+    const rb = el("button", "btn alt", "↻"); rb.type = "button"; rb.title = "Check for news now"; rb.disabled = !!MKT.busy.n || navigator.onLine === false; rb.onclick = () => loadNews(true); meta.append(rb);
+    nw.append(meta);
+    ((N && N.items) || []).forEach(it => {
+      const d = el("div", "news"); const h = el("div"); h.append(el("span", "kind k-" + slug(it.kind || "news"), it.kind || "news"), el("b", null, it.title));
+      d.append(h, el("p", null, it.summary), el("span", "pd", [niceDate(it.date), it.source].filter(Boolean).join(" · "))); nw.append(d);
+    });
+    if (N && (N.sources || []).length) nw.append(sourcesList(N.sources));
+    if (!N || !(N.items || []).length) nw.append(emptyNote(MKT.busy.n ? "" : "News appears here when you're online."));
+    // full catalogue
+    const cat = el("section", "panel blk ehcat"); cat.append(el("h3", null, `All EHEDG guidelines (${EH_GL.length})`));
+    const q = el("input"); q.type = "search"; q.placeholder = "Search guidelines, e.g. valves, welding, air"; q.value = ehQ; q.setAttribute("aria-label", "Search guidelines");
+    const list = el("div", "gllist");
+    const draw = () => {
+      list.replaceChildren();
+      const qq = ehQ.toLowerCase().trim();
+      const shown = EH_GL.filter(g => !qq || (g[0] + " " + g[1]).toLowerCase().includes(qq));
+      (ehAll || qq ? shown : shown.slice(0, 12)).forEach(g => {
+        const r = el("div", "glrow" + (g[3] ? " wd" : ""));
+        const a = el("a", null, `GL ${g[0]}`); a.href = glLink(g[0]); a.target = "_blank"; a.rel = "noopener";
+        r.append(a, el("span", null, g[1] + (g[3] ? " (withdrawn)" : "")), g[2] && !g[3] ? el("span", "tag", "dry food") : el("span"));
+        list.append(r);
+      });
+      if (!qq && !ehAll && shown.length > 12) { const m = el("button", "qchip", `Show all ${shown.length}`); m.type = "button"; m.onclick = () => { ehAll = true; draw(); }; list.append(m); }
+      if (!shown.length) list.append(emptyNote("No guideline matches that."));
+    };
+    q.oninput = () => { ehQ = q.value; draw(); };
+    const src = el("a", "srclink", "Guideline catalogue on ehedg.org"); src.href = "https://ehedg.org/guidelines"; src.target = "_blank"; src.rel = "noopener";
+    cat.append(q, list, src); draw();
+    grid.append(ck, kg, nw, cat); root.append(grid);
+    root.append(el("p", "note pnote", "EHEDG guidelines are published by the European Hygienic Engineering & Design Group; buy or download the full documents from EHEDG. This tracker is a planning aid, not an audit or certification."));
+    if (!N || Date.now() - Date.parse(N.got || 0) > 6 * 3600000) { if (!MKT.busy.n && navigator.onLine !== false && AI.state !== "nokey") setTimeout(() => loadNews(false), 50); }
+  }
+
+  /* chat: give the AI the latest prices and EHEDG list when a question is about them */
+  function marketContext(text) {
+    const t = text.toLowerCase(), lines = [];
+    if (/price|rate|cost|market|auction|₹|rs\b|rupee|dollar|\$|cheap|expensive|commodit|trade|export|import|sell|buy|rising|falling|tracker/.test(t)) {
+      const rows = allRows(), words = t.split(/[^a-z]+/).filter(w => w.length > 3);
+      let pick = rows.filter(r => words.some(w => r.spice.toLowerCase().includes(w)));
+      if (!pick.length) pick = rows.slice(0, 20);
+      pick.slice(0, 20).forEach(r => { const p = prevOf(rowKey(r), r.date, r.price); lines.push(`PRICES: ${r.spice}${r.market ? ", " + r.market : ""}${r.grade ? ", " + r.grade : ""}: ${r.price} ${r.unit} on ${r.date || "recent"} (source: ${r.source}${r.official ? ", official" : ", found by AI web search"})${p ? `; earlier ${p[1]} on ${p[0]}` : ""}.`); });
+      commItems().filter(c => words.some(w => c.name.toLowerCase().includes(w)) || /commodit/.test(t)).slice(0, 8).forEach(c => { const pts = c.points, l = pts[pts.length - 1], y = pts[pts.length - 13]; lines.push(`COMMODITY: ${c.name} ${l[1]} ${c.unit} in ${l[0].slice(0, 7)}${y ? `, a year earlier ${y[1]}` : ""} (IMF via FRED).`); });
+      if (fxRate()) lines.push(`COMMODITY: 1 US$ = ₹${fxRate()} (Federal Reserve, latest).`);
+    }
+    if (/ehedg|hygien|guideline|gl ?\d|sanitar|cleanab|food safety design/.test(t)) {
+      lines.push("EHEDG GUIDELINES (current titles): " + EH_GL.filter(g => !g[3]).map(g => `GL ${g[0]} ${g[1]}`).join("; ") + ".");
+      const done = EH_CHECK.filter((_, i) => eh.ck[i]).length; lines.push(`EHEDG TRACKER: the person has ticked ${done} of ${EH_CHECK.length} hygienic design checks.`);
+    }
+    return lines.join("\n");
+  }
+  function marketLocalAnswer(text) {
+    const t = text.toLowerCase();
+    if (!/price|rate|cost|auction|market price/.test(t)) return null;
+    const words = t.split(/[^a-z]+/).filter(w => w.length > 3 && !/price|rate|cost|today|what|much|does|current/.test(w));
+    const rows = allRows().filter(r => words.some(w => r.spice.toLowerCase().includes(w)));
+    if (!rows.length) return null;
+    const when = MKT.prices && MKT.prices.server_time ? ago(MKT.prices.server_time) : "earlier";
+    let o = `Here are the latest prices I have saved (checked ${when}):\n\n| Spice | Market | Price | Date | Source |\n|---|---|---|---|---|\n`;
+    rows.slice(0, 10).forEach(r => o += `| ${r.spice} | ${[r.market, r.grade].filter(Boolean).join(", ")} | ${fmtN(r.price)} ${r.unit} | ${niceDate(r.date)} | ${r.source} |\n`);
+    return { text: o + "\nPrices are indicative. Open **Prices** for charts and live updates.", chips: [{ label: "Open Prices", q: "__prices" }] };
+  }
+
+  /* ---------- New version check: open pages and the app update themselves ---------- */
+  let myVersion = null, updateShown = false;
+  async function checkVersion() {
+    const j = await getAPI("/api/version", 20000);
+    if (!j || !j.version) return;
+    if (!myVersion) { myVersion = j.version; return; }
+    if (j.version !== myVersion && !updateShown) {
+      updateShown = true;
+      const bar = el("div", "upbar"); bar.setAttribute("role", "status");
+      bar.append(el("span", null, "✨ SpiceBot has been updated."));
+      const b = el("button", "btn", "Reload now"); b.type = "button"; b.onclick = () => location.reload(); bar.append(b);
+      document.body.append(bar);
+      // reload by itself next time the page is in the background and nothing is being typed
+      document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && !busy && !$("q").value.trim()) location.reload(); });
+    }
+  }
+  setTimeout(checkVersion, 4000); setInterval(() => { if (document.visibilityState === "visible") checkVersion(); }, 5 * 60000);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkVersion(); });
+  if (watch.length) setTimeout(() => refreshAll(false), 3000);
+  checkAlerts();
+
+  addEventListener("hashchange", () => { const v = ({ spices: "sheet", explore: "explore", prices: "prices", ehedg: "ehedg", chat: "chat" })[location.hash.slice(1)] || "home"; if (v !== tab) showTab(v); });
   /* ---------- Start ---------- */
   setEnglish(EN_ONLY);
   labelTheme();
@@ -2820,7 +3396,7 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
     hist.forEach(([r, t]) => { if (r === "u") userSay(t); else botSay(t); });
     restoring = false;
   } else welcome();
-  const startView = ({ spices: "sheet", explore: "explore", chat: "chat" })[location.hash.slice(1)] || "home";
+  const startView = ({ spices: "sheet", explore: "explore", chat: "chat", prices: "prices", ehedg: "ehedg" })[location.hash.slice(1)] || "home";
   showTab(startView === "chat" ? "home" : startView);
   if (startView === "chat" || (store.get("sb.chatOpen", false) && innerWidth > 600)) setChat(true);
   onScroll();
