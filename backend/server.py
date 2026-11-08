@@ -59,6 +59,7 @@ How to answer:
     [[structure: piperine]]               the chemical structure of a compound (its common name)
     [[chart: Title | Label A=12 %; Label B=30 %]]   a bar chart, only with numbers you are confident of
   Describe what the visual shows in words; do not mention the tags themselves.
+- Write chemical formulas as plain text like C17H19NO3. Never use LaTeX or $ math notation.
 - Language: {language}"""
 
 # A simple limit per visitor so nobody can use up the key's free quota.

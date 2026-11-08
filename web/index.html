@@ -2657,6 +2657,13 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
       const letters = (body.match(/[A-Za-z0-9]/g) || []).length, marks = (body.match(/[\/\\|_()\-<>`'.*~^=+]/g) || []).length;
       return marks > letters * 0.35 ? "" : all;
     });
+    // turn LaTeX-style formulas ($\text{C}_{17}\text{H}_{19}$) into plain text with subscripts
+    const SUB = "₀₁₂₃₄₅₆₇₈₉", SUP = "⁰¹²³⁴⁵⁶⁷⁸⁹";
+    clean = clean.replace(/\$\$?([^$\n]{1,120}?)\$\$?/g, (all, x) => {
+      if (!/\\|_|\^/.test(x)) return all;
+      return x.replace(/\\(text|mathrm|mathbf|rm)\s*\{([^}]*)\}/g, "$2").replace(/_\{?(\d+)\}?/g, (m, d) => d.split("").map(c => SUB[c]).join(""))
+        .replace(/\^\{?(\d+)\}?/g, (m, d) => d.split("").map(c => SUP[c]).join("")).replace(/\\(cdot|times)/g, "·").replace(/\\rightarrow|\\to/g, "→").replace(/[{}\\]/g, "").replace(/\s+/g, " ").trim();
+    });
     return { clean: clean.replace(/\n{3,}/g, "\n\n").trim(), tags };
   }
   const normName = s => String(s).toLowerCase().replace(/α/g, "alpha").replace(/β/g, "beta").replace(/γ/g, "gamma").replace(/δ/g, "delta").replace(/\([^)]*\)/g, "").replace(/[^a-z0-9]/g, "");
