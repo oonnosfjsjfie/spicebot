@@ -186,22 +186,66 @@ def _grounded(payload):
     return text, sources, model
 
 
-def _ai_prices():
+def _weekly():
+    """Official weekly wholesale prices: the Spices Board's PDF report, read by Gemini (no web search needed)."""
+    if not API_KEY:
+        raise RuntimeError("no GEMINI_API_KEY")
+    url, week = markets.latest_weekly()
+    pdf = markets.http_bytes(url, timeout=60)
+    text, model = ask_gemini(None, None, payload=markets.weekly_payload(pdf, week))
+    j = markets.parse_json_block(text)
+    rows = markets.clean_rows(j.get("rows"), "₹/kg")
+    for r in rows:
+        r.update({"source": "Spices Board weekly report", "url": url, "official": True, "ai": True})
+        r["date"] = r["date"] or j.get("week") or week
+    if not rows:
+        raise RuntimeError("no prices read from the weekly report")
+    return {"rows": rows, "week": j.get("week") or week, "url": url, "model": model}
+
+
+def _world():
+    """World export prices: Gemini with Google Search. Needs a key whose plan includes search."""
     text, sources, model = _grounded(markets.grounded_payload(markets.price_prompt()))
     j = markets.parse_json_block(text)
-    return {"india": markets.clean_rows(j.get("india"), "₹/kg"), "world": markets.clean_rows(j.get("world"), "US$/kg"),
+    return {"world": markets.clean_rows(j.get("world"), "US$/kg"), "india": markets.clean_rows(j.get("india"), "₹/kg"),
             "sources": sources[:12], "model": model}
 
 
+def _ai_prices():  # used by the scheduled history job
+    out = {"india": [], "world": []}
+    try:
+        out["india"] = _weekly()["rows"]
+    except Exception as e:
+        print("weekly:", e)
+    try:
+        w = _world()
+        out["world"] = w["world"]
+    except Exception as e:
+        print("world:", e)
+    return out
+
+
 def _ehedg_news():
-    text, sources, model = _grounded(markets.grounded_payload(markets.ehedg_prompt()))
+    texts = []
+    for u in markets.EHEDG_PAGES:
+        try:
+            texts.append((u, markets.page_text(u)))
+        except Exception as e:
+            print("ehedg page:", u, e)
+    if not texts:
+        raise RuntimeError("EHEDG website not reachable")
+    text, model = ask_gemini(None, None, payload=markets.ehedg_payload(texts))
     j = markets.parse_json_block(text)
-    items = [{k: str(i.get(k, ""))[:400] for k in ("title", "date", "kind", "summary", "source")} for i in (j.get("items") or [])[:8] if i.get("title")]
-    return {"items": items, "sources": sources[:10], "model": model}
+    items = [{k: str(i.get(k, ""))[:400] for k in ("title", "date", "kind", "summary", "source", "url")} for i in (j.get("items") or [])[:8] if i.get("title")]
+    for i in items:
+        if not i["url"].startswith("https://www.ehedg.org") and not i["url"].startswith("https://ehedg.org"):
+            i["url"] = markets.EHEDG_PAGES[0]
+    return {"items": items, "sources": [{"title": "EHEDG news", "url": markets.EHEDG_PAGES[0]}, {"title": "EHEDG global events", "url": markets.EHEDG_PAGES[1]}], "model": model}
 
 
 BOARD = markets.Cache("spices-board", markets.fetch_spices_board, ttl=15 * 60, retry=180)
-AIPRICES = markets.Cache("ai-prices", _ai_prices, ttl=3 * 3600, retry=900)
+WEEKLY = markets.Cache("weekly-report", _weekly, ttl=6 * 3600, retry=1800)
+WORLD = markets.Cache("world-prices", _world, ttl=3 * 3600, retry=6 * 3600)
 COMMOD = markets.Cache("commodities", markets.fetch_commodities, ttl=6 * 3600, retry=600)
 EHEDG = markets.Cache("ehedg-news", _ehedg_news, ttl=12 * 3600, retry=1800)
 HISTORY_URL = "https://raw.githubusercontent.com/oonnosfjsjfie/spicebot/main/web/data/price-history.json"
@@ -220,15 +264,22 @@ VERSION = os.getenv("RENDER_GIT_COMMIT", "")[:12] or str(int((WEB / "index.html"
 STARTED = markets.now_iso()
 
 
+def _st(c):
+    return {k: c.get(k) for k in ("updated", "age_s", "refreshing", "error", "next_s")}
+
+
 def prices_payload(force):
     b = BOARD.get(force=force and (BOARD.at == 0 or time.time() - BOARD.at > 60))
-    a = AIPRICES.get(force=force and (AIPRICES.at == 0 or time.time() - AIPRICES.at > 1800)) if API_KEY else {"data": None, "error": "AI not set up"}
-    ad = a.get("data") or {}
+    none = {"data": None, "error": "AI not set up"}
+    wk = WEEKLY.get(force=force and (WEEKLY.at == 0 or time.time() - WEEKLY.at > 1800)) if API_KEY else none
+    w = WORLD.get(force=force and WORLD.at != 0 and time.time() - WORLD.at > 1800) if API_KEY else none
+    wkd, wd = wk.get("data") or {}, w.get("data") or {}
+    werr = w.get("error") or ""
     return {
-        "india_official": b["data"] or [], "india_ai": ad.get("india", []), "world": ad.get("world", []),
-        "ai_sources": ad.get("sources", []),
-        "status": {"official": {k: b.get(k) for k in ("updated", "age_s", "refreshing", "error", "next_s")},
-                   "ai": {k: a.get(k) for k in ("updated", "age_s", "refreshing", "error", "next_s")}},
+        "india_official": b["data"] or [], "india_ai": wkd.get("rows", []), "weekly": {"week": wkd.get("week"), "url": wkd.get("url")},
+        "world": wd.get("world", []), "ai_sources": wd.get("sources", []),
+        "world_note": "search_unavailable" if ("429" in werr or "quota" in werr.lower() or "busy" in werr.lower()) and not wd else "",
+        "status": {"official": _st(b), "ai": _st(wk), "world": _st(w)},
         "server_time": markets.now_iso(),
     }
 

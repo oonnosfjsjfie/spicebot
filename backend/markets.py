@@ -9,6 +9,7 @@ Sources
 
 Everything is cached and refreshed in the background, so pages stay fast and the Gemini quota lasts.
 """
+import base64
 import csv
 import html
 import io
@@ -16,6 +17,7 @@ import json
 import re
 import threading
 import time
+import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 
@@ -27,10 +29,14 @@ def now_iso():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def http_get(url, timeout=25):
-    req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "*/*"})
+def http_bytes(url, timeout=40, limit=15_000_000):
+    req = urllib.request.Request(urllib.parse.quote(url, safe=":/?=&%#"), headers={"User-Agent": UA, "Accept": "*/*"})
     with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read().decode("utf-8", "replace")
+        return r.read(limit)
+
+
+def http_get(url, timeout=25):
+    return http_bytes(url, timeout).decode("utf-8", "replace")
 
 
 class Cache:
@@ -271,3 +277,64 @@ spice processing.
 
 Reply with ONLY this JSON (at most 8 items, newest first, no invented items):
 {{"items":[{{"title":"short headline","date":"YYYY-MM-DD or YYYY-MM or empty","kind":"guideline|certification|event|news","summary":"one or two plain sentences","source":"publisher name"}}]}}"""
+
+
+# ---------------- Spices Board weekly "Spice Market" report (PDF), read by Gemini ----------------
+WEEKLY_LIST = "https://indianspices.com/magazines/english/sm-weekly.html"
+
+
+def latest_weekly():
+    page = http_get(WEEKLY_LIST)
+    links = re.findall(r'href="([^"]+?\.pdf)"', page, flags=re.I)
+    if not links:
+        raise RuntimeError("no weekly report link found")
+    url = urllib.parse.urljoin(WEEKLY_LIST, html.unescape(links[0]))
+    m = re.search(r"(\d{2})\.(\d{2})\.(\d{4})", urllib.parse.unquote(url))
+    week = f"{m.group(3)}-{m.group(2)}-{m.group(1)}" if m else ""
+    return url, week
+
+
+def weekly_payload(pdf_bytes, week):
+    prompt = f"""This PDF is the Spices Board of India's weekly "Spice Market" report{(' for the week ending ' + week) if week else ''}.
+Read every price in it and return them as data. Copy numbers exactly as printed; do not calculate or guess.
+- Cardamom auctions: give one row for small cardamom with the weekly total average price (market "Kerala & Tamil Nadu auctions").
+- Daily black pepper prices: give one row per market and grade using the latest day that has a price.
+- Wholesale prices: one row per spice, market centre and grade for THIS week (not last year). If a min and max
+  are printed, put them in "min" and "max" and their midpoint in "price".
+"date" is the date the price is for (YYYY-MM-DD; use the week-ending date if only the week is given).
+
+Reply with ONLY this JSON:
+{{"week":"YYYY-MM-DD","rows":[{{"spice":"Chilli","market":"Guntur","grade":"Teja","min":180,"max":220,"price":200,"date":"YYYY-MM-DD"}}]}}"""
+    return {
+        "contents": [{"role": "user", "parts": [
+            {"inlineData": {"mimeType": "application/pdf", "data": base64.b64encode(pdf_bytes).decode()}},
+            {"text": prompt}]}],
+        "generationConfig": {"temperature": 0, "maxOutputTokens": 12000},
+    }
+
+
+# ---------------- EHEDG news, read from ehedg.org ----------------
+EHEDG_PAGES = ["https://www.ehedg.org/news-events/news/ehedg-news",
+               "https://www.ehedg.org/news-events/events-activities/ehedg-global-events"]
+
+
+def page_text(url, limit=14000):
+    raw = http_get(url)
+    raw = re.sub(r"(?is)<(script|style|noscript|svg|head)[^>]*>.*?</\1>", " ", raw)
+    raw = re.sub(r"(?is)<a [^>]*href=\"([^\"]+)\"[^>]*>(.*?)</a>", lambda m: f" {m.group(2)} [link: {urllib.parse.urljoin(url, m.group(1))}] ", raw)
+    text = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", raw))).strip()
+    return text[:limit]
+
+
+def ehedg_payload(texts):
+    today = datetime.now(timezone.utc).strftime("%d %B %Y")
+    joined = "\n\n".join(f"PAGE {u}:\n{tx}" for u, tx in texts)
+    prompt = f"""Today is {today}. Below is the text of EHEDG's official News and Events pages (ehedg.org).
+List the most recent news items and upcoming events found on these pages, newest first, at most 8.
+Only use what is on the pages. Write each summary in your own plain words (one or two sentences).
+
+Reply with ONLY this JSON:
+{{"items":[{{"title":"short headline","date":"YYYY-MM-DD or YYYY-MM or empty","kind":"guideline|certification|event|news","summary":"...","source":"EHEDG","url":"link from the page if shown"}}]}}
+
+{joined}"""
+    return {"contents": [{"role": "user", "parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.1, "maxOutputTokens": 4000}}

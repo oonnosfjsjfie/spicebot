@@ -557,6 +557,7 @@ svg text { font-family: var(--body); }
 .ehmeta .btn { margin-left: auto; padding: 3px 9px; }
 .news { border-top: 1px solid var(--line); padding: 8px 0; display: grid; gap: 3px; }
 .news p { margin: 0; font-size: .88rem; }
+.news b a { color: var(--fg); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; }
 .news .kind { font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; border-radius: 999px; padding: 1px 7px; margin-right: 6px; background: var(--spice-soft, var(--line)); color: var(--fg); }
 @media (max-width: 820px) { .ehgrid { grid-template-columns: 1fr; } }
 @media (max-width: 600px) {
@@ -3032,7 +3033,8 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
     box.append(el("b", null, !online ? "Offline · showing saved prices" : busy ? "Updating…" : "Live"));
     const parts = [];
     if (st.official && st.official.updated) parts.push(`Spices Board checked ${ago(st.official.updated)}`);
-    if (st.ai && st.ai.updated) parts.push(`AI web search ${ago(st.ai.updated)}`);
+    if (st.ai && st.ai.updated) parts.push(`weekly report read ${ago(st.ai.updated)}`);
+    if (st.world && st.world.updated) parts.push(`world prices ${ago(st.world.updated)}`);
     if (MKT.comm && MKT.comm.status && MKT.comm.status.updated) parts.push(`commodities ${ago(MKT.comm.status.updated)}`);
     if (online && !busy) parts.push(`next check in ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`);
     box.append(el("span", "lmeta", parts.join(" · ")));
@@ -3150,15 +3152,17 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
       (P.india_official || []).forEach(r => s1.append(priceRow(r)));
       if (!(P.india_official || []).length) s1.append(emptyNote(!online ? "You're offline and no prices are saved yet. Connect once and they're kept for offline use." : st.official && st.official.error ? "The Spices Board website isn't answering right now. SpiceBot will try again shortly." : "Loading the latest Spices Board prices…"));
       const a = el("a", "srclink", "Open the Spices Board price page"); a.href = "https://indianspices.com/marketing/price/domestic/current-market-price"; a.target = "_blank"; a.rel = "noopener"; s1.append(a);
-      const s2 = el("section", "pblk"); s2.append(el("h3", null, "More Indian prices · found by SpiceBot's AI"), el("p", "sub", "Gemini searches the web for recent auction and wholesale prices (cardamom, turmeric, chilli, jeera and more). Each comes with its source; check it before buying or selling."));
+      const wk = P.weekly || {};
+      const s2 = el("section", "pblk"); s2.append(el("h3", null, "Wholesale & auction prices · Spices Board weekly report"), el("p", "sub", `Cardamom auctions and wholesale prices across India (chilli, turmeric, jeera, coriander and more) from the Spices Board's weekly "Spice Market" report${wk.week ? " for the week ending " + niceDate(wk.week) : ""}. SpiceBot's AI reads the numbers out of the report; open it to double-check.`));
       (P.india_ai || []).forEach(r => s2.append(priceRow(r)));
-      if (!(P.india_ai || []).length) s2.append(emptyNote(!online ? "Saved AI prices will appear here once you've been online." : st.ai && st.ai.refreshing ? "SpiceBot's AI is searching the web for prices. This takes up to a minute…" : st.ai && st.ai.error ? "The AI price search isn't available right now. It will try again soon." : "Searching for prices…"));
-      if ((P.ai_sources || []).length) s2.append(sourcesList(P.ai_sources));
+      if (!(P.india_ai || []).length) s2.append(emptyNote(!online ? "Saved weekly prices will appear here once you've been online." : st.ai && st.ai.refreshing ? "SpiceBot's AI is reading the latest weekly report. This takes up to a minute…" : st.ai && st.ai.error ? "The weekly report couldn't be read right now. SpiceBot will try again soon." : "Reading the latest weekly report…"));
+      if (wk.url) { const a2 = el("a", "srclink", "Open the weekly report (PDF)"); a2.href = wk.url; a2.target = "_blank"; a2.rel = "noopener"; s2.append(a2); }
       body.append(s1, s2);
     } else if (pSeg === "world") {
       const s = el("section", "pblk"); s.append(el("h3", null, "World spice prices · export markets"), el("p", "sub", "International and export prices in US dollars per kg, found by SpiceBot's AI from recent trade reports." + (fxRate() ? ` Rupee amounts use today's rate of ₹${fmtN(fxRate(), 2)} per US$ (Federal Reserve).` : "")));
       (P.world || []).forEach(r => s.append(priceRow(r, true)));
-      if (!(P.world || []).length) s.append(emptyNote(!online ? "Saved world prices will appear here once you've been online." : st.ai && st.ai.refreshing ? "SpiceBot's AI is searching the web for world prices. This takes up to a minute…" : st.ai && st.ai.error ? "The AI price search isn't available right now. It will try again soon." : "Searching for prices…"));
+      const sw = st.world || {};
+      if (!(P.world || []).length) s.append(emptyNote(!online ? "Saved world prices will appear here once you've been online." : P.world_note === "search_unavailable" ? "World export prices come from Gemini's Google Search, which isn't included in this Gemini key's free plan. They'll appear here by themselves if search is switched on for the key. Meanwhile, the Indian and commodity prices are live." : sw.refreshing ? "SpiceBot's AI is searching the web for world prices. This takes up to a minute…" : sw.error ? "The world price search isn't available right now. It will try again later." : "Searching for prices…"));
       if ((P.ai_sources || []).length) s.append(sourcesList(P.ai_sources));
       body.append(s);
     } else if (pSeg === "comm") {
@@ -3297,11 +3301,12 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
     // news (live)
     const nw = el("section", "panel blk"); nw.append(el("h3", null, "Latest from EHEDG"));
     const N = MKT.news;
-    const meta = el("div", "ehmeta"); meta.append(el("span", "ldot" + (navigator.onLine !== false ? " on" : "")), el("span", null, MKT.busy.n ? "SpiceBot's AI is searching for EHEDG news…" : N && N.got ? `Found by SpiceBot's AI · checked ${ago(N.got)}` : navigator.onLine === false ? "Offline" : "Not checked yet"));
+    const meta = el("div", "ehmeta"); meta.append(el("span", "ldot" + (navigator.onLine !== false ? " on" : "")), el("span", null, MKT.busy.n ? "Reading EHEDG's news and events pages…" : N && N.got ? `From ehedg.org, summarised by SpiceBot's AI · checked ${ago(N.got)}` : navigator.onLine === false ? "Offline" : "Not checked yet"));
     const rb = el("button", "btn alt", "↻"); rb.type = "button"; rb.title = "Check for news now"; rb.disabled = !!MKT.busy.n || navigator.onLine === false; rb.onclick = () => loadNews(true); meta.append(rb);
     nw.append(meta);
     ((N && N.items) || []).forEach(it => {
-      const d = el("div", "news"); const h = el("div"); h.append(el("span", "kind k-" + slug(it.kind || "news"), it.kind || "news"), el("b", null, it.title));
+      const d = el("div", "news"); const h = el("div"); h.append(el("span", "kind k-" + slug(it.kind || "news"), it.kind || "news"));
+      if (it.url) { const a = el("a", null, it.title); a.href = it.url; a.target = "_blank"; a.rel = "noopener"; const b = el("b"); b.append(a); h.append(b); } else h.append(el("b", null, it.title));
       d.append(h, el("p", null, it.summary), el("span", "pd", [niceDate(it.date), it.source].filter(Boolean).join(" · "))); nw.append(d);
     });
     if (N && (N.sources || []).length) nw.append(sourcesList(N.sources));
@@ -3338,7 +3343,7 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
       const rows = allRows(), words = t.split(/[^a-z]+/).filter(w => w.length > 3);
       let pick = rows.filter(r => words.some(w => r.spice.toLowerCase().includes(w)));
       if (!pick.length) pick = rows.slice(0, 20);
-      pick.slice(0, 20).forEach(r => { const p = prevOf(rowKey(r), r.date, r.price); lines.push(`PRICES: ${r.spice}${r.market ? ", " + r.market : ""}${r.grade ? ", " + r.grade : ""}: ${r.price} ${r.unit} on ${r.date || "recent"} (source: ${r.source}${r.official ? ", official" : ", found by AI web search"})${p ? `; earlier ${p[1]} on ${p[0]}` : ""}.`); });
+      pick.slice(0, 20).forEach(r => { const p = prevOf(rowKey(r), r.date, r.price); lines.push(`PRICES: ${r.spice}${r.market ? ", " + r.market : ""}${r.grade ? ", " + r.grade : ""}: ${r.price} ${r.unit} on ${r.date || "recent"} (source: ${r.source}${r.ai && r.official ? ", read from the official weekly report" : r.official ? ", official" : ", found by AI web search"})${p ? `; earlier ${p[1]} on ${p[0]}` : ""}.`); });
       commItems().filter(c => words.some(w => c.name.toLowerCase().includes(w)) || /commodit/.test(t)).slice(0, 8).forEach(c => { const pts = c.points, l = pts[pts.length - 1], y = pts[pts.length - 13]; lines.push(`COMMODITY: ${c.name} ${l[1]} ${c.unit} in ${l[0].slice(0, 7)}${y ? `, a year earlier ${y[1]}` : ""} (IMF via FRED).`); });
       if (fxRate()) lines.push(`COMMODITY: 1 US$ = ₹${fxRate()} (Federal Reserve, latest).`);
     }
