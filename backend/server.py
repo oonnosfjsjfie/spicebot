@@ -52,6 +52,13 @@ How to answer:
 - If you are not sure, say so. Do not make up facts, studies or statistics.
 - Use Markdown: short paragraphs, bullet points, and a small table when comparing. Keep most answers under
   180 words unless the person asks for detail. Do not include URLs; the app adds sources itself.
+- Visuals: NEVER draw pictures, diagrams or structures with text characters (no ASCII art, no code blocks
+  used as pictures). The app draws real visuals for you. When a visual would help, or when the person asks
+  to see something, put tags like these on their own lines at the end of your answer (at most 3):
+    [[photo: Piper nigrum]]               a real photo of a spice, herb or plant (common or Latin name)
+    [[structure: piperine]]               the chemical structure of a compound (its common name)
+    [[chart: Title | Label A=12 %; Label B=30 %]]   a bar chart, only with numbers you are confident of
+  Describe what the visual shows in words; do not mention the tags themselves.
 - Language: {language}"""
 
 # A simple limit per visitor so nobody can use up the key's free quota.

@@ -471,6 +471,14 @@ svg text { font-family: var(--body); }
 .qchip:hover { border-color: var(--accent); color: var(--accent); }
 .qchip.sheet { border-style: dashed; color: var(--accent); }
 .qchip:disabled { opacity: .55; cursor: default; }
+.vizrow { display: grid; gap: 10px; margin-top: 8px; }
+.viz { margin: 0; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--surface); }
+.viz figcaption { font-size: .8rem; color: var(--muted); margin-top: 6px; }
+.viz figcaption.vt { color: var(--fg); font-weight: 600; margin: 0 0 6px; }
+.viz .struct { background: transparent; }
+.viz .pcimg { max-height: 160px; width: auto; mix-blend-mode: multiply; }
+:root[data-theme="dark"] .viz .pcimg { filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .viz .pcimg { filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; } }
 .wiki { display: flex; gap: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--surface); align-items: flex-start; }
 .wiki img { width: 84px; height: 84px; object-fit: cover; border-radius: 8px; flex: none; }
 .wtx { min-width: 0; display: flex; flex-direction: column; gap: 4px; font-size: .88rem; }
@@ -2638,11 +2646,88 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
       }));
     }
   }
+  /* ---------- Visuals the AI asks for: [[photo: …]], [[structure: …]], [[chart: title | a=1; b=2]] ---------- */
+  const VIZ_RE = /\[\[\s*(photo|image|picture|structure|molecule|chart)\s*:\s*([^\]]+?)\s*\]\]/gi;
+  function takeVisuals(text) {
+    const tags = []; let m;
+    while ((m = VIZ_RE.exec(text)) && tags.length < 4) tags.push({ kind: m[1].toLowerCase(), arg: m[2].trim() });
+    let clean = text.replace(VIZ_RE, "");
+    // drop any picture drawn out of text characters (fenced blocks that are mostly symbols)
+    clean = clean.replace(/```[a-z]*\n([\s\S]*?)```/gi, (all, body) => {
+      const letters = (body.match(/[A-Za-z0-9]/g) || []).length, marks = (body.match(/[\/\\|_()\-<>`'.*~^=+]/g) || []).length;
+      return marks > letters * 0.35 ? "" : all;
+    });
+    return { clean: clean.replace(/\n{3,}/g, "\n\n").trim(), tags };
+  }
+  const normName = s => String(s).toLowerCase().replace(/α/g, "alpha").replace(/β/g, "beta").replace(/γ/g, "gamma").replace(/δ/g, "delta").replace(/\([^)]*\)/g, "").replace(/[^a-z0-9]/g, "");
+  function findCompound(name) {
+    const n = normName(name);
+    return Object.keys(CHEM.C).find(k => normName(CHEM.C[k].n) === n) || Object.keys(CHEM.C).find(k => { const c = normName(CHEM.C[k].n); return n.length > 4 && (c.startsWith(n) || n.startsWith(c)); });
+  }
+  function findSpiceByName(name) {
+    const n = normName(name);
+    return SPICES.find(s => normName(s.name) === n || normName(s.latin.split(",")[0]) === n || normName(s.name.split(" (")[0]) === n);
+  }
+  const subF = f => String(f).replace(/(\d+)/g, m => m.split("").map(x => "₀₁₂₃₄₅₆₇₈₉"[x]).join(""));
+  async function vizPhoto(arg) {
+    const s = findSpiceByName(arg);
+    const rec = s ? await wikiFor("s:" + s.name, wikiTitle(s)) : await wikiSearch(arg);
+    return rec ? wikiBlock(rec) : null;
+  }
+  async function vizStructure(arg) {
+    const box = el("figure", "viz");
+    const pic = el("div", "struct"); box.append(pic);
+    const k = findCompound(arg);
+    if (k) {
+      const c = CHEM.C[k];
+      box.append(el("figcaption", null, `${c.n} · ${subF(c.f)} · ${c.mw.toFixed(2)} g/mol`));
+      const svg = await structSvg(k);
+      if (svg) { pic.innerHTML = svg; return box; }
+    } else box.append(el("figcaption", null, arg));
+    if (!NET.ok) return k ? (pic.textContent = "The structure drawing appears once you've been online.", box) : null;
+    const im = el("img", "pcimg"); im.alt = "Structure of " + arg; im.loading = "lazy";
+    im.src = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/" + encodeURIComponent(k ? CHEM.C[k].n.replace(/ \(.*\)/, "") : arg) + "/PNG?image_size=300x300";
+    return new Promise(res => { im.onload = () => { pic.replaceChildren(im); res(box); }; im.onerror = () => res(k ? (pic.textContent = "Couldn't draw this structure.", box) : null); });
+  }
+  function vizChart(arg) {
+    const parts = arg.split("|"), title = parts.length > 1 ? parts.shift().trim() : "";
+    const items = parts.join("|").split(/[;\n]/).map(p => { const m = p.match(/^\s*(.+?)\s*[=:]\s*(-?[\d.,]+)\s*([^\d\s][^;]*)?$/); return m ? { label: m[1].trim(), v: parseFloat(m[2].replace(/,/g, "")), unit: (m[3] || "").trim() } : null; }).filter(x => x && isFinite(x.v)).slice(0, 12);
+    if (items.length < 2) return null;
+    const box = el("figure", "viz");
+    if (title) box.append(el("figcaption", "vt", title));
+    const W = Math.round(Math.max(260, Math.min(520, (msgs.clientWidth || 460) - 100))), rowH = 28, labW = Math.round(W * 0.34), padR = 64, H = items.length * rowH + 6;
+    const max = Math.max(...items.map(i => Math.abs(i.v)), 1e-9);
+    const svg = sv("svg", { class: "chart", viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": (title ? title + ": " : "") + items.map(i => `${i.label} ${i.v}${i.unit ? " " + i.unit : ""}`).join(", ") });
+    items.forEach((it, i) => {
+      const y = i * rowH + 4, w = Math.max(3, (W - labW - padR) * Math.abs(it.v) / max);
+      const g = sv("g", { class: "hbar" });
+      const mx = Math.floor((labW - 10) / 6.6), lab = it.label.length > mx ? it.label.slice(0, mx - 1) + "…" : it.label;
+      g.append(sv("text", { x: labW - 8, y: y + rowH / 2 + 3, "text-anchor": "end" }, lab));
+      g.append(sv("rect", { class: "b", x: labW, y: y + 6, width: w, height: rowH - 14, rx: 3 }));
+      g.append(sv("text", { class: "v", x: labW + w + 6, y: y + rowH / 2 + 3 }, `${it.v}${it.unit ? " " + it.unit : ""}`));
+      svg.append(g);
+    });
+    svg.prepend(sv("line", { x1: labW, y1: 2, x2: labW, y2: H - 2, class: "axisl" }));
+    box.append(svg);
+    return box;
+  }
+  function renderVisuals(out, tags) {
+    if (!tags.length) return;
+    const wrap = el("div", "vizrow"); out.col.insertBefore(wrap, out.b.nextSibling);
+    tags.forEach(t => {
+      const slot = el("div"); wrap.append(slot);
+      const p = /photo|image|picture/.test(t.kind) ? vizPhoto(t.arg) : /structure|molecule/.test(t.kind) ? vizStructure(t.arg) : Promise.resolve(vizChart(t.arg));
+      p.then(node => { if (node) { slot.replaceWith(node); msgs.scrollTop = msgs.scrollHeight; } else slot.remove(); }).catch(() => slot.remove());
+    });
+  }
   function renderAI(ai, r) {
     const chips = r && r.chips && r.chips.length ? r.chips : [{ label: "Tell me about cardamom", q: "Tell me about cardamom" }, { label: "Quiz me", q: "Quiz me" }];
-    const out = botSay(ai.answer, chips);
+    const { clean, tags } = takeVisuals(ai.answer);
+    const out = botSay(clean || ai.answer, chips);
     sourceTag(out, "AI answer", ai.hits);
-    renderExtras(out, r);
+    const hasPhoto = tags.some(t => /photo|image|picture/.test(t.kind));
+    renderExtras(out, hasPhoto && r ? { ...r, wiki: null } : r);
+    renderVisuals(out, tags);
   }
   function renderLocal(r, text, note) {
     const pre = note ? `*${note} Here's my built-in answer.*\n\n` : "";
