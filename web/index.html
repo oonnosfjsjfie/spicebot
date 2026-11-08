@@ -473,6 +473,16 @@ svg text { font-family: var(--body); }
 .qchip:disabled { opacity: .55; cursor: default; }
 
 /* ---------- Prices + EHEDG ---------- */
+.segrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.segrow .seg { margin-bottom: 0; }
+.btn.dl { border-radius: 999px; padding: 8px 14px; }
+@media (max-width: 600px) {
+  .ehcat input[type=search], .tctl select, .glrow select { font-size: 16px; }
+  .segrow #pDl, .segrow #pDl .btn { width: 100%; }
+  .glrow { grid-template-columns: 52px minmax(0, 1fr); }
+  .glrow select, .glrow .tag { grid-column: 2; justify-self: start; }
+}
+
 .nav-item.dot::after { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #d03b3b; margin-left: 5px; vertical-align: 2px; }
 .livebar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .86rem; margin-bottom: 12px; }
 .livebar .lmeta { color: var(--muted); flex: 1 1 260px; }
@@ -957,7 +967,7 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
     <div class="page gut">
       <div class="page-head"><h1>Prices</h1><p>Spice prices in India and around the world, global commodities, and a tracker for the ones you care about. Everything updates by itself while this page is open.</p></div>
       <div class="livebar" id="pLive" aria-live="polite"></div>
-      <div class="seg" id="pSeg" role="tablist" aria-label="Price lists"></div>
+      <div class="segrow"><div class="seg" id="pSeg" role="tablist" aria-label="Price lists"></div><span id="pDl"></span></div>
       <section class="panel pbody" id="pBody"></section>
     </div>
   </div>
@@ -3111,6 +3121,7 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
     });
   }
   function renderPrices() {
+    if (!$("pDl").firstChild) $("pDl").append(dlButton("⬇ Download PDF report", pricesPdf));
     segBtns(); paintLive(); renderPricesBody();
     if (!MKT.got.p || Date.now() - MKT.got.p > 60000) { nextAt = Date.now() + LIVE_MS; refreshAll(false); }
   }
@@ -3266,14 +3277,7 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
     ring.append(sv("circle", { cx: 40, cy: 40, r: 32, class: "rbg" }), sv("circle", { cx: 40, cy: 40, r: 32, class: "rfg", "stroke-dasharray": `${(pct / 100 * 201).toFixed(1)} 201`, transform: "rotate(-90 40 40)" }), sv("text", { x: 40, y: 45, "text-anchor": "middle", class: "rtx" }, pct + "%"));
     const st = el("div"); st.append(el("b", null, "Your spice unit's hygienic design"), el("p", null, `${doneCk} of ${EH_CHECK.length} checks done · ${applied} of ${rel.length} key guidelines applied`));
     const acts = el("div", "ehacts");
-    const cp = el("button", "btn alt", "Copy report"); cp.type = "button";
-    cp.onclick = async () => {
-      const lines = ["SpiceBot · EHEDG tracker report · " + new Date().toLocaleDateString("en-IN"), "", `Checklist: ${doneCk}/${EH_CHECK.length} done`];
-      EH_CHECK.forEach((c, i) => lines.push(`${eh.ck[i] ? "[x]" : "[ ]"} ${c[0]} (GL ${c[1]})`));
-      lines.push("", "Key guidelines:"); rel.forEach(g => lines.push(`GL ${g[0]} ${g[1]}: ${eh.gl[g[0]] || "To read"}`));
-      try { await navigator.clipboard.writeText(lines.join("\n")); cp.textContent = "Copied ✓"; } catch { cp.textContent = "Couldn't copy"; }
-      setTimeout(() => cp.textContent = "Copy report", 2000);
-    };
+    const cp = dlButton("⬇ Download PDF report", ehedgPdf);
     const ask = el("button", "btn alt", "Ask SpiceBot"); ask.type = "button"; ask.onclick = () => send("Which EHEDG guidelines matter most for a small spice grinding and packing unit, and where should I start?");
     acts.append(cp, ask); st.append(acts);
     sum.append(ring, st); root.append(sum);
@@ -3363,6 +3367,239 @@ form.ask textarea { flex: 1; min-width: 0; resize: none; background: var(--bg); 
     let o = `Here are the latest prices I have saved (checked ${when}):\n\n| Spice | Market | Price | Date | Source |\n|---|---|---|---|---|\n`;
     rows.slice(0, 10).forEach(r => o += `| ${r.spice} | ${[r.market, r.grade].filter(Boolean).join(", ")} | ${fmtN(r.price)} ${r.unit} | ${niceDate(r.date)} | ${r.source} |\n`);
     return { text: o + "\nPrices are indicative. Open **Prices** for charts and live updates.", chips: [{ label: "Open Prices", q: "__prices" }] };
+  }
+
+  /* ---------- PDF reports: a small built-in PDF maker (works offline, no extra library) ---------- */
+  const PDFW = 595.28, PDFH = 841.89;
+  const CP1252 = { 0x20AC: 0x80, 0x2026: 0x85, 0x2018: 0x91, 0x2019: 0x92, 0x201C: 0x93, 0x201D: 0x94, 0x2022: 0x95, 0x2013: 0x96, 0x2014: 0x97 };
+  const pdfClean = s => String(s == null ? "" : s).replace(/₹\s?/g, "Rs ").replace(/▲/g, "+").replace(/▼/g, "-").replace(/■/g, "=").replace(/[✓✔]/g, "").replace(/≈/g, "~").replace(/·/g, "·")
+    .replace(/[₀-₉]/g, d => String(d.charCodeAt(0) - 0x2080)).replace(/[α]/g, "alpha-").replace(/[β]/g, "beta-").replace(/[γ]/g, "gamma-").replace(/[δ]/g, "delta-")
+    .replace(/[^\x20-\x7E -ÿ€…‘’“”•–—]/g, "");
+  function pdfEnc(s) {
+    let o = "";
+    for (const ch of pdfClean(s)) {
+      const c = ch.codePointAt(0), b = CP1252[c] != null ? CP1252[c] : c < 256 ? c : 63, x = String.fromCharCode(b);
+      o += x === "(" || x === ")" || x === "\\" ? "\\" + x : x;
+    }
+    return o;
+  }
+  const pdfCtx = (() => { try { return document.createElement("canvas").getContext("2d"); } catch { return null; } })();
+  function pdfWidth(s, size, bold) {
+    s = pdfClean(s);
+    if (!pdfCtx) return s.length * size * 0.52;
+    pdfCtx.font = `${bold ? "bold " : ""}${size}px Helvetica, Arial, sans-serif`;
+    return pdfCtx.measureText(s).width;
+  }
+  const C = { ink: [0.1, 0.1, 0.1], muted: [0.42, 0.41, 0.39], line: [0.86, 0.85, 0.83], spice: [0.6, 0.36, 0], soft: [0.97, 0.95, 0.91], up: [0.04, 0.49, 0.04], down: [0.76, 0.21, 0.18], white: [1, 1, 1], band: [0.07, 0.07, 0.07] };
+  const rgb = c => c.map(n => n.toFixed(3)).join(" ");
+
+  function newPdf(title) {
+    const pages = []; let cur = null;
+    const M = 46, CW = PDFW - 2 * M;
+    const d = {
+      M, CW, y: M, title,
+      page() { cur = []; pages.push(cur); d.y = M; return d; },
+      text(x, y, s, o = {}) { const size = o.size || 10; cur.push(`BT /${o.bold ? "F2" : "F1"} ${size} Tf ${rgb(o.color || C.ink)} rg ${x.toFixed(2)} ${(PDFH - y).toFixed(2)} Td (${pdfEnc(s)}) Tj ET`); },
+      textR(xr, y, s, o = {}) { d.text(xr - pdfWidth(s, o.size || 10, o.bold), y, s, o); },
+      rect(x, y, w, h, o = {}) {
+        let s = `${(o.lw || 0.7).toFixed(2)} w `;
+        if (o.fill) s += `${rgb(o.fill)} rg `; if (o.stroke) s += `${rgb(o.stroke)} RG `;
+        s += `${x.toFixed(2)} ${(PDFH - y - h).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re ${o.fill && o.stroke ? "B" : o.fill ? "f" : "S"}`;
+        cur.push(s);
+      },
+      line(pts, o = {}) {
+        if (pts.length < 2) return;
+        cur.push(`${(o.lw || 1).toFixed(2)} w ${rgb(o.color || C.ink)} RG 1 J 1 j ` + pts.map((p, i) => `${p[0].toFixed(2)} ${(PDFH - p[1]).toFixed(2)} ${i ? "l" : "m"}`).join(" ") + " S");
+      },
+      wrap(s, maxW, size, bold) {
+        const out = []; let line = "";
+        String(s == null ? "" : s).split(/\s+/).forEach(w => {
+          const t = line ? line + " " + w : w;
+          if (pdfWidth(t, size, bold) <= maxW || !line) line = t; else { out.push(line); line = w; }
+        });
+        if (line) out.push(line);
+        return out.length ? out : [""];
+      },
+      room(h) { if (d.y + h > PDFH - M - 18) { d.page(); return true; } return false; },
+      para(s, o = {}) {
+        const size = o.size || 10, lh = size * 1.38, x = M + (o.indent || 0);
+        d.wrap(s, CW - (o.indent || 0), size, o.bold).forEach(l => { d.room(lh); d.text(x, d.y + size, l, o); d.y += lh; });
+        d.y += o.gap == null ? 4 : o.gap;
+      },
+      h2(s) { d.room(40); d.y += 10; d.text(M, d.y + 13, s, { size: 13, bold: true }); d.y += 19; d.line([[M, d.y], [M + CW, d.y]], { color: C.line, lw: 0.8 }); d.y += 8; },
+      table(cols, rows, o = {}) {
+        const size = o.size || 8.6, lh = size * 1.32, pad = 4;
+        const head = () => { d.rect(M, d.y, CW, lh + 2 * pad, { fill: C.soft }); let x = M; cols.forEach(c => { const tx = c.align === "r" ? x + c.w - pad : x + pad; c.align === "r" ? d.textR(tx, d.y + pad + size, c.label, { size, bold: true, color: C.muted }) : d.text(tx, d.y + pad + size, c.label, { size, bold: true, color: C.muted }); x += c.w; }); d.y += lh + 2 * pad; };
+        d.room(lh * 3 + 2 * pad); head();
+        rows.forEach(r => {
+          const cells = cols.map((c, i) => c.draw ? null : d.wrap(r[i], c.w - 2 * pad, size, c.bold));
+          const n = Math.max(1, ...cells.map(x => x ? x.length : 1)), h = n * lh + 2 * pad;
+          if (d.room(h)) head();
+          let x = M;
+          cols.forEach((c, i) => {
+            if (c.draw) c.draw(r[i], x + pad, d.y + pad, c.w - 2 * pad, h - 2 * pad);
+            else cells[i].forEach((l, k) => { const y = d.y + pad + size + k * lh; const op = { size, bold: c.bold, color: (c.color && c.color(r[i], r)) || C.ink }; c.align === "r" ? d.textR(x + c.w - pad, y, l, op) : d.text(x + pad, y, l, op); });
+            x += c.w;
+          });
+          d.y += h; d.line([[M, d.y], [M + CW, d.y]], { color: C.line, lw: 0.5 });
+        });
+        d.y += 6;
+      },
+      spark(pts, x, y, w, h, color) {
+        if (!pts || pts.length < 2) return;
+        const vs = pts.map(p => p[1]), mn = Math.min(...vs), mx = Math.max(...vs), rg = mx - mn || 1;
+        d.line(pts.map((p, i) => [x + i / (pts.length - 1) * w, y + h - (p[1] - mn) / rg * h]), { color: color || C.spice, lw: 1 });
+      },
+      chart(pts, unit, h = 120) {
+        d.room(h + 30);
+        const x0 = M + 46, w = CW - 56, y0 = d.y + 4;
+        if (!pts || pts.length < 2) { d.para(pts && pts.length === 1 ? `One saved price so far: ${fmtN(pts[0][1])} ${unit} on ${niceDate(pts[0][0])}.` : "No price history saved yet.", { size: 9, color: C.muted }); return; }
+        const vs = pts.map(p => p[1]); let mn = Math.min(...vs), mx = Math.max(...vs); const pad = (mx - mn) * 0.08 || Math.abs(mx) * 0.05 || 1; mn -= pad; mx += pad;
+        const X = i => x0 + i / (pts.length - 1) * w, Y = v => y0 + (1 - (v - mn) / (mx - mn)) * h;
+        for (let g = 0; g <= 3; g++) { const v = mn + (mx - mn) * g / 3; d.line([[x0, Y(v)], [x0 + w, Y(v)]], { color: C.line, lw: 0.5 }); d.textR(x0 - 5, Y(v) + 3, fmtN(v), { size: 7, color: C.muted }); }
+        d.line(pts.map((p, i) => [X(i), Y(p[1])]), { color: C.spice, lw: 1.6 });
+        [0, pts.length - 1].forEach((i, k) => { const s = niceDate(pts[i][0]); k ? d.textR(x0 + w, y0 + h + 12, s, { size: 7, color: C.muted }) : d.text(x0, y0 + h + 12, s, { size: 7, color: C.muted }); });
+        d.y = y0 + h + 22;
+      },
+      bytes() {
+        const objs = []; const add = s => (objs.push(s), objs.length);
+        const f1 = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
+        const f2 = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+        const pagesId = add(""), kids = [];
+        pages.forEach((pg, i) => {
+          const foot = [`BT /F1 7.5 Tf ${rgb(C.muted)} rg ${M} 24 Td (${pdfEnc("SpiceBot · " + title)}) Tj ET`, `BT /F1 7.5 Tf ${rgb(C.muted)} rg ${(PDFW - M - pdfWidth(`Page ${i + 1} of ${pages.length}`, 7.5)).toFixed(2)} 24 Td (${pdfEnc(`Page ${i + 1} of ${pages.length}`)}) Tj ET`];
+          const content = pg.concat(foot).join("\n");
+          const cid = add(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+          kids.push(add(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${PDFW} ${PDFH}] /Contents ${cid} 0 R /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >> >> >>`));
+        });
+        objs[pagesId - 1] = `<< /Type /Pages /Kids [${kids.map(k => k + " 0 R").join(" ")}] /Count ${kids.length} >>`;
+        const cat = add(`<< /Type /Catalog /Pages ${pagesId} 0 R >>`);
+        const t = new Date(), pz = n => String(n).padStart(2, "0");
+        const info = add(`<< /Title (${pdfEnc(title)}) /Author (SpiceBot) /Producer (SpiceBot) /CreationDate (D:${t.getFullYear()}${pz(t.getMonth() + 1)}${pz(t.getDate())}${pz(t.getHours())}${pz(t.getMinutes())}${pz(t.getSeconds())}) >>`);
+        let s = "%PDF-1.4\n%âãÏÓ\n"; const offs = [];
+        objs.forEach((o, i) => { offs.push(s.length); s += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+        const xref = s.length;
+        s += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n` + offs.map(o => String(o).padStart(10, "0") + " 00000 n \n").join("") + `trailer\n<< /Size ${objs.length + 1} /Root ${cat} 0 R /Info ${info} 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+        const out = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i) & 255;
+        return out;
+      },
+    };
+    d.page();
+    return d;
+  }
+  function pdfHeader(d, title, sub) {
+    d.rect(0, 0, PDFW, 92, { fill: C.band });
+    d.rect(d.M, 30, 26, 26, { fill: C.spice });
+    d.text(d.M + 6.5, 49, "S", { size: 17, bold: true, color: C.white });
+    d.text(d.M + 36, 43, "SpiceBot", { size: 10, bold: true, color: [0.75, 0.75, 0.75] });
+    d.text(d.M + 36, 62, title, { size: 18, bold: true, color: C.white });
+    d.textR(PDFW - d.M, 43, sub, { size: 8.5, color: [0.75, 0.75, 0.75] });
+    d.y = 112;
+  }
+  const stamp = () => new Date().toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  const fileStamp = () => { const t = new Date(), p = n => String(n).padStart(2, "0"); return `${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}`; };
+
+  /* save a file: Android app → saved to Downloads; iPhone/iPad home-screen app → share sheet; browsers → download */
+  async function saveFile(bytes, name, mime = "application/pdf") {
+    if (window.SpiceBotAndroid && typeof SpiceBotAndroid.saveFile === "function") {
+      let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      SpiceBotAndroid.saveFile(btoa(bin), name, mime); return "app";
+    }
+    const blob = new Blob([bytes], { type: mime });
+    const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    let file = null; try { file = new File([blob], name, { type: mime }); } catch {}
+    if (ios && (navigator.standalone || matchMedia("(display-mode: standalone)").matches) && file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: name }); return "share"; } catch (e) { if (e && e.name === "AbortError") return "cancel"; }
+    }
+    if (navigator.msSaveOrOpenBlob) { navigator.msSaveOrOpenBlob(blob, name); return "download"; }
+    const url = URL.createObjectURL(blob), a = el("a");
+    a.href = url; a.download = name; a.rel = "noopener";
+    if (!("download" in a)) { window.open(url, "_blank"); return "open"; }
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return "download";
+  }
+  function dlButton(label, make) {
+    const b = el("button", "btn dl", label); b.type = "button";
+    b.onclick = async () => {
+      const old = b.textContent; b.disabled = true; b.textContent = "Making PDF…";
+      try { const { bytes, name } = make(); const how = await saveFile(bytes, name); b.textContent = how === "app" ? "Saved ✓" : how === "cancel" ? old : "Downloaded ✓"; }
+      catch (e) { console.error(e); b.textContent = "Couldn't make the PDF"; }
+      setTimeout(() => { b.textContent = old; b.disabled = false; }, 2200);
+    };
+    return b;
+  }
+
+  function ehedgPdf() {
+    const d = newPdf("EHEDG tracker report");
+    pdfHeader(d, "EHEDG tracker report", stamp());
+    const done = EH_CHECK.filter((_, i) => eh.ck[i]).length, rel = EH_GL.filter(g => g[2] && !g[3]);
+    const applied = rel.filter(g => eh.gl[g[0]] === "Applied" || eh.gl[g[0]] === "Not needed").length, pct = Math.round(done / EH_CHECK.length * 100);
+    d.text(d.M, d.y + 30, pct + "%", { size: 30, bold: true, color: C.spice });
+    d.text(d.M + 92, d.y + 14, "Hygienic design of your spice unit", { size: 11, bold: true });
+    d.text(d.M + 92, d.y + 29, `${done} of ${EH_CHECK.length} checks done · ${applied} of ${rel.length} key guidelines applied or not needed`, { size: 9, color: C.muted });
+    d.rect(d.M + 92, d.y + 36, d.CW - 92, 7, { fill: C.line }); d.rect(d.M + 92, d.y + 36, (d.CW - 92) * pct / 100, 7, { fill: C.spice });
+    d.y += 58;
+    d.h2("Hygienic design checklist");
+    EH_CHECK.forEach((c, i) => {
+      const lines = d.wrap(c[0], d.CW - 120, 9.5); const h = lines.length * 13 + 6; d.room(h);
+      const on = !!eh.ck[i];
+      d.rect(d.M, d.y + 2, 10, 10, on ? { fill: C.spice, stroke: C.spice } : { stroke: C.muted });
+      if (on) d.line([[d.M + 2.2, d.y + 7.2], [d.M + 4.3, d.y + 9.6], [d.M + 8, d.y + 4.2]], { color: C.white, lw: 1.4 });
+      lines.forEach((l, k) => d.text(d.M + 18, d.y + 10.5 + k * 13, l, { size: 9.5, color: on ? C.ink : C.ink }));
+      d.textR(d.M + d.CW, d.y + 10.5, /^\d/.test(c[1]) ? "GL " + c[1] : c[1], { size: 8, color: C.muted });
+      d.y += h;
+    });
+    d.h2("Key EHEDG guidelines for dry food and spices");
+    d.table([{ label: "Guideline", w: 62, bold: true }, { label: "Title", w: d.CW - 62 - 86 }, { label: "Status", w: 86, bold: true, color: v => v === "Applied" ? C.up : v === "Reading" ? C.spice : v === "Not needed" ? C.muted : C.ink }],
+      rel.map(g => ["GL " + g[0], g[1], eh.gl[g[0]] || "To read"]));
+    const N = MKT.news;
+    if (N && (N.items || []).length) {
+      d.h2("Latest from EHEDG");
+      N.items.forEach(it => { d.room(40); d.para(it.title, { size: 10, bold: true, gap: 1 }); d.para([niceDate(it.date), it.kind, it.source].filter(Boolean).join(" · "), { size: 8, color: C.muted, gap: 1 }); if (it.summary) d.para(it.summary, { size: 9, gap: 7 }); });
+      d.para(`Read from ehedg.org and summarised by SpiceBot's AI, ${N.got ? ago(N.got) : ""}.`, { size: 8, color: C.muted });
+    }
+    d.h2("About this report");
+    d.para("EHEDG (European Hygienic Engineering & Design Group) publishes guidelines for food equipment and factories that are easy to keep clean. Get the full documents from ehedg.org. This report is a planning aid made with SpiceBot's EHEDG tracker; it is not an audit or certification.", { size: 8.5, color: C.muted });
+    return { bytes: d.bytes(), name: `SpiceBot EHEDG report ${fileStamp()}.pdf` };
+  }
+
+  function pricesPdf() {
+    const d = newPdf("Spice & commodity price report");
+    pdfHeader(d, "Spice & commodity prices", stamp());
+    const P = MKT.prices || {}, st = P.status || {};
+    const when = [st.official && st.official.updated ? `Spices Board checked ${ago(st.official.updated)}` : "", st.ai && st.ai.updated ? `weekly report read ${ago(st.ai.updated)}` : "", MKT.comm && MKT.comm.status && MKT.comm.status.updated ? `commodities ${ago(MKT.comm.status.updated)}` : ""].filter(Boolean).join(" · ");
+    d.para((navigator.onLine === false ? "Made offline from saved prices. " : "") + (when || "Prices as last saved on this device."), { size: 8.5, color: C.muted });
+    const chgOf = r => { const p = prevOf(rowKey(r), r.date, r.price); if (!p || !p[1]) return ""; const ch = (r.price - p[1]) / p[1] * 100; return `${ch > 0.05 ? "+" : ch < -0.05 ? "-" : ""}${Math.abs(ch).toFixed(1)}%`; };
+    const chCol = v => /^\+/.test(v) ? C.up : /^-/.test(v) ? C.down : C.muted;
+    const spiceTable = (rows, cur) => d.table([
+      { label: "Spice", w: 110, bold: true }, { label: "Market · grade", w: d.CW - 110 - 78 - 52 - 70 }, { label: cur === "$" ? "US$ per kg" : "Rs per kg", w: 78, align: "r", bold: true },
+      { label: "Change", w: 52, align: "r", color: chCol }, { label: "Date", w: 70, align: "r" }],
+      rows.map(r => [r.spice, [r.market, r.grade].filter(Boolean).join(" · "), fmtN(r.price), chgOf(r), niceDate(r.date)]));
+    if ((P.india_official || []).length) { d.h2("India · official daily prices (Spices Board of India)"); spiceTable(P.india_official); }
+    if ((P.india_ai || []).length) { d.h2("India · wholesale & auction prices (Spices Board weekly report)"); spiceTable(P.india_ai); d.para("Read from the Spices Board's weekly Spice Market report by SpiceBot's AI." + (P.weekly && P.weekly.url ? " Report: " + decodeURI(P.weekly.url) : ""), { size: 8, color: C.muted }); }
+    if ((P.world || []).length) { d.h2("World · export prices (found by SpiceBot's AI)"); spiceTable(P.world, "$"); }
+    if (commItems().length) {
+      d.h2("Global commodities (IMF, monthly)");
+      d.table([{ label: "Commodity", w: 120, bold: true }, { label: "Latest", w: 70, align: "r", bold: true }, { label: "Unit", w: 72 }, { label: "Month", w: 48, align: "r", color: chCol }, { label: "Year", w: 48, align: "r", color: chCol }, { label: "Last 2 years", w: d.CW - 120 - 70 - 72 - 48 - 48 - 52, draw: (pts, x, y, w, h) => d.spark(pts, x, y + 1, w, h - 2) }, { label: "Month of", w: 52, align: "r" }],
+        commItems().map(c => { const p = c.points, l = p[p.length - 1], pr = p[p.length - 2], yr = p[p.length - 13]; const f = (a, b) => b ? `${a > b ? "+" : a < b ? "-" : ""}${Math.abs((a - b) / b * 100).toFixed(1)}%` : ""; return [c.name, fmtN(l[1]), c.unit, f(l[1], pr && pr[1]), f(l[1], yr && yr[1]), p.slice(-24), niceDate(l[0].slice(0, 7))]; }), { size: 8.4 });
+      if (fxRate()) d.para(`1 US$ = Rs ${fmtN(fxRate(), 2)} (Federal Reserve, latest).`, { size: 8, color: C.muted });
+    }
+    if (watch.length) {
+      d.h2("My tracker");
+      watch.forEach(w => {
+        const cur = currentOf(w);
+        d.room(170);
+        d.para(w.name, { size: 10.5, bold: true, gap: 1 });
+        const since = cur && seen[w.k] != null ? (cur.price - seen[w.k]) / seen[w.k] * 100 : null;
+        d.para(cur ? `${fmtN(cur.price)} ${cur.unit} on ${niceDate(cur.date)}${since != null ? ` · ${since >= 0 ? "+" : "-"}${Math.abs(since).toFixed(1)}% since last looked` : ""} · alert at ${w.th || 5}%` : "No current price saved.", { size: 8.5, color: C.muted, gap: 2 });
+        d.chart(w.kind === "c" ? (commItems().find(x => "c:" + x.id === w.k) || {}).points : seriesFor(w.k), w.unit, 105);
+      });
+    }
+    d.h2("Sources & notes");
+    d.para("Spices Board of India (indianspices.com): Current Market Price of Key Spices and the weekly Spice Market report. Commodities: IMF Primary Commodity Prices via FRED, Federal Reserve Bank of St. Louis. Exchange rate: FRED DEXINUS.", { size: 8.5 });
+    if ((P.ai_sources || []).length) d.para("Web sources used for AI-found prices: " + P.ai_sources.map(s => s.title).join(", ") + ".", { size: 8.5 });
+    d.para("Prices are indicative and for information only; they can differ from what you pay or get. Numbers read or found by AI can be wrong, so check the source. Not financial advice.", { size: 8, color: C.muted });
+    return { bytes: d.bytes(), name: `SpiceBot price report ${fileStamp()}.pdf` };
   }
 
   /* ---------- New version check: open pages and the app update themselves ---------- */

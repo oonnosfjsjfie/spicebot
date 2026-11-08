@@ -1,9 +1,15 @@
 package com.spicebot.app;
 
 import android.app.Activity;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.util.Base64;
+import android.webkit.JavascriptInterface;
+import android.widget.Toast;
 import android.os.Handler;
 import android.os.Looper;
 import android.webkit.ValueCallback;
@@ -15,7 +21,10 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 
 /**
@@ -51,7 +60,9 @@ public class MainActivity extends Activity {
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(true);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        settings.setUserAgentString(settings.getUserAgentString() + " SpiceBotApp/2");
+        settings.setUserAgentString(settings.getUserAgentString() + " SpiceBotApp/3");
+        // Lets the website save files it makes (PDF reports) to the phone.
+        webView.addJavascriptInterface(new Bridge(this), "SpiceBotAndroid");
 
         webView.setWebViewClient(new AppClient(this));
         webView.setWebChromeClient(new FileClient(this));
@@ -122,6 +133,69 @@ public class MainActivity extends Activity {
         if (fileCallback != null) fileCallback.onReceiveValue(null);
         fileCallback = callback;
         startActivityForResult(params.createIntent(), FILE_REQUEST);
+    }
+
+    /** Saves a file to Downloads/SpiceBot (Android 10+) and opens it; on older phones, offers the share sheet. */
+    void saveFile(String base64, String name, String mime) {
+        try {
+            byte[] data = Base64.decode(base64, Base64.DEFAULT);
+            if (data.length > 15000000) throw new Exception("too large");
+            String safe = name.replaceAll("[^A-Za-z0-9._ -]", "_");
+            if (safe.length() == 0 || safe.length() > 80) safe = "SpiceBot report.pdf";
+            if (!"application/pdf".equals(mime)) mime = "application/octet-stream";
+            Uri uri;
+            if (Build.VERSION.SDK_INT >= 29) {
+                ContentValues v = new ContentValues();
+                v.put(MediaStore.MediaColumns.DISPLAY_NAME, safe);
+                v.put(MediaStore.MediaColumns.MIME_TYPE, mime);
+                v.put(MediaStore.MediaColumns.RELATIVE_PATH, "Download/SpiceBot");
+                uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
+                OutputStream out = getContentResolver().openOutputStream(uri);
+                out.write(data);
+                out.close();
+                Toast.makeText(this, "Saved to Downloads/SpiceBot: " + safe, Toast.LENGTH_LONG).show();
+                Intent open = new Intent(Intent.ACTION_VIEW);
+                open.setDataAndType(uri, mime);
+                open.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                try { startActivity(open); } catch (Exception ignored) { /* no PDF viewer; it's still saved */ }
+            } else {
+                File dir = new File(getCacheDir(), "reports");
+                dir.mkdirs();
+                File f = new File(dir, safe);
+                FileOutputStream out = new FileOutputStream(f);
+                out.write(data);
+                out.close();
+                uri = Uri.parse("content://" + FileShare.AUTHORITY + "/" + Uri.encode(safe));
+                Intent send = new Intent(Intent.ACTION_SEND);
+                send.setType(mime);
+                send.putExtra(Intent.EXTRA_STREAM, uri);
+                send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                startActivity(Intent.createChooser(send, "Save or share " + safe));
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "Couldn't save the file: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    static class Bridge {
+        final MainActivity a;
+        Bridge(MainActivity a) { this.a = a; }
+
+        @JavascriptInterface
+        public void saveFile(String base64, String name, String mime) {
+            a.runOnUiThread(new SaveTask(a, base64, name, mime));
+        }
+
+        @JavascriptInterface
+        public boolean canSave() { return true; }
+    }
+
+    static class SaveTask implements Runnable {
+        final MainActivity a; final String b, n, m;
+        SaveTask(MainActivity a, String b, String n, String m) { this.a = a; this.b = b; this.n = n; this.m = m; }
+
+        @Override
+        public void run() { a.saveFile(b, n, m); }
     }
 
     @Override
